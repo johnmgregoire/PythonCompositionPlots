@@ -7,8 +7,11 @@ class QuaternaryPlot:
     """send a matplitlib Axis and a ternary plot is made with the utility functions. everything fractional"""
     def __init__(self, ax_subplottriplet, offset=.08, minlist=[0., 0., 0., 0.], ellabels=['A', 'B', 'C', 'D'], allowoutofboundscomps=True):
         self.offset=offset
-        if isinstance(ax_subplottriplet, tuple) or isinstance(ax_subplottriplet, int):
+        if isinstance(ax_subplottriplet, int):
             self.ax=pylab.subplot(ax_subplottriplet, projection='3d')
+        elif isinstance(ax_subplottriplet, tuple):
+            a, b, c=ax_subplottriplet
+            self.ax=pylab.subplot(a, b, c, projection='3d')
         else:
             self.ax=ax_subplottriplet
         self.allowoutofboundscomps=allowoutofboundscomps

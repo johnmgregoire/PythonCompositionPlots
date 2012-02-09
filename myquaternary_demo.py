@@ -18,4 +18,5 @@ q.scatter(comps,c=comps[:,3])
 
 q.plotabcprojection(comps, c=(.4, .4, .4))
 q.label(ha='center', va='center', fontsize=16)
+q.set_projection(azim=-31, elev=38)
 pylab.show()
