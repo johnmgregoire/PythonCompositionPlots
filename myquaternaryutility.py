@@ -5,30 +5,33 @@ from mpl_toolkits import mplot3d
 #from myternaryutility import TernaryPlot
 class QuaternaryPlot:
     """send a matplitlib Axis and a ternary plot is made with the utility functions. everything fractional"""
-    def __init__(self, ax_subplottriplet, offset=.08, minlist=[0., 0., 0., 0.], ellabels=['A', 'B', 'C', 'D'], allowoutofboundscomps=True):
-        self.offset=offset
-        if isinstance(ax_subplottriplet, int):
-            self.ax=pylab.subplot(ax_subplottriplet, projection='3d')
-        elif isinstance(ax_subplottriplet, tuple):
-            a, b, c=ax_subplottriplet
-            self.ax=pylab.subplot(a, b, c, projection='3d')
-        else:
-            self.ax=ax_subplottriplet
+    def __init__(self, ax_subplottriplet=None, offset=.08, minlist=[0., 0., 0., 0.], ellabels=['A', 'B', 'C', 'D'], allowoutofboundscomps=True):
         self.allowoutofboundscomps=allowoutofboundscomps
         minlist=numpy.float32(minlist)
         self.rangelist=numpy.float32([[m, 1.-numpy.concatenate([minlist[:i], minlist[i+1:]]).sum()] for i, m in enumerate(minlist)])
-        if not ellabels is None:
-            for el, r in zip(ellabels, self.rangelist):
-                print 'range of %s is %.2f to %.2f' %((el,)+tuple(r))
-        self.ax.set_axis_off()
-        self.ax.set_aspect('equal')
-        self.ax.figure.hold('True')
-        self.ax.set_xlim(-.10, 1.10)
-        self.ax.set_ylim(-.10, 1.10)
-        self.cartendpts=numpy.float32([[0, 0, 0], [.5, numpy.sqrt(3.)/2., 0], [1, 0, 0], [.5, .5/numpy.sqrt(3.), numpy.sqrt(2./3.)]])
-        self.ellabels=ellabels
-        self.outline()
-        self.mappable=None
+        
+        if not ax_subplottriplet is None:
+            self.offset=offset
+            if isinstance(ax_subplottriplet, int):
+                self.ax=pylab.subplot(ax_subplottriplet, projection='3d')
+            elif isinstance(ax_subplottriplet, tuple):
+                a, b, c=ax_subplottriplet
+                self.ax=pylab.subplot(a, b, c, projection='3d')
+            else:
+                self.ax=ax_subplottriplet
+            
+#            if not ellabels is None:
+#                for el, r in zip(ellabels, self.rangelist):
+#                    print 'range of %s is %.2f to %.2f' %((el,)+tuple(r))
+            self.ax.set_axis_off()
+            self.ax.set_aspect('equal')
+            self.ax.figure.hold('True')
+            self.ax.set_xlim(-.10, 1.10)
+            self.ax.set_ylim(-.10, 1.10)
+            self.cartendpts=numpy.float32([[0, 0, 0], [.5, numpy.sqrt(3.)/2., 0], [1, 0, 0], [.5, .5/numpy.sqrt(3.), numpy.sqrt(2./3.)]])
+            self.ellabels=ellabels
+            self.outline()
+            self.mappable=None
     
     def set_projection(self, azim=None, elev=None):
         self.ax.view_init(azim=azim, elev=elev)
@@ -103,24 +106,29 @@ class QuaternaryPlot:
         (xs, ys, zs) = self.toCart(terncoordlist)
         self.mappable=self.ax.scatter(xs, ys, zs, **kwargs)
 
-    def plot(self, terncoordlist, descriptor, **kwargs):
-        (xs, ys) = self.toCart(terncoordlist)
-        self.ax.plot(xs, ys, descriptor, **kwargs)
+    def scalarmap(self, vals, norm, cmap):
+        self.mappable=cm.ScalarMappable(norm=norm, cmap=cmap)
+        self.mappable.set_array(vals)
+        return [self.mappable.to_rgba(v) for v in vals]
+    def plotbycolor(self, terncoordlist, cols,**kwargs):
+        (xs, ys, zs) = self.toCart(terncoordlist)
+        for xv, yv, zv, c in zip(xs, ys, zs, cols):
+            self.ax.plot3D([xv], [yv], [zv], color=c, markeredgecolor=c, **kwargs)
 
-    def color_comp_calc(self, terncoordlist, rangelist=None):#could be made more general to allow for endpoint colors other than RGB
-        if rangelist is None:
-            rangelist=self.rangelist
-        return numpy.array([[(c-minc)/(maxc-minc) for c, (minc, maxc) in zip(tc, rangelist)] for tc in terncoordlist])
-        
-    def colorcompplot(self, terncoordlist, descriptor, colors=None, hollow=False, **kwargs):
-        (xs, ys) = self.toCart(terncoordlist)
-        if colors is None:
-            colors=self.color_comp_calc(terncoordlist)
-        for col, x, y in zip(colors, xs, ys):
-            if hollow:
-                self.ax.plot([x], [y], descriptor, markeredgecolor=col, markerfacecolor='None',  **kwargs)
-            else:
-                self.ax.plot([x], [y], descriptor, color=col, **kwargs)
+#    def color_comp_calc(self, terncoordlist, rangelist=None):#could be made more general to allow for endpoint colors other than RGB
+#        if rangelist is None:
+#            rangelist=self.rangelist
+#        return numpy.array([[(c-minc)/(maxc-minc) for c, (minc, maxc) in zip(tc, rangelist)] for tc in terncoordlist])
+#        
+#    def colorcompplot(self, terncoordlist, descriptor, colors=None, hollow=False, **kwargs):
+#        (xs, ys) = self.toCart(terncoordlist)
+#        if colors is None:
+#            colors=self.color_comp_calc(terncoordlist)
+#        for col, x, y in zip(colors, xs, ys):
+#            if hollow:
+#                self.ax.plot([x], [y], descriptor, markeredgecolor=col, markerfacecolor='None',  **kwargs)
+#            else:
+#                self.ax.plot([x], [y], descriptor, color=col, **kwargs)
 
     def colorbar(self, label='', **kwargs):
         'Draws the colorbar and labels it'
@@ -149,8 +157,8 @@ class QuaternaryPlot:
         return self.compdist(self.toCart([c1])[0], self.toCart([c2])[0])
             
     def line(self, begin, end, fmt='k-',  **kwargs):
-        (xs, ys) = self.toCart([begin, end])
-        self.ax.plot(xs, ys, fmt, **kwargs)
+        (xs, ys, zs) = self.toCart([begin, end])
+        self.ax.plot(xs, ys, zs, fmt, **kwargs)
 
     def outline(self):
         for i, ep in enumerate(self.cartendpts):
@@ -282,3 +290,19 @@ class QuaternaryPlot:
         self.mappable=self.ax.scatter(xs, ys, zs, **kwargs)
         
 
+    def rgb_comp(self, terncoordlist, affine=True):
+        cmy_cmyk=lambda a:a[:3]*(1.-a[3])+a[3]
+        rgb_cmy=lambda a:1.-a
+        rgb_cmyk=lambda a:rgb_cmy(cmy_cmyk(a))
+
+        if affine:
+            aff_tcl=self.afftrans(terncoordlist)
+        else:
+            aff_tcl=terncoordlist
+        return numpy.array([rgb_cmyk(numpy.array(a)) for a in aff_tcl])
+        
+    def plotpoints_rgb(self, terncoordlist, affine=True, **kwargs):
+        cols=self.rgb_comp(terncoordlist, affine)
+        for comp, c in zip(terncoordlist, cols):
+            self.scatter([comp], color=c, **kwargs)
+        

@@ -5,15 +5,23 @@ import numpy
 class TernaryPlot:
     """send a matplitlib Axis and a ternary plot is made with the utility functions. everything fractional"""
 
-    def __init__(self, ax, offset=.02, minlist=[0., 0., 0.], ellabels=None, allowoutofboundscomps=True):
+    def __init__(self, ax_subplottriplet, offset=.02, minlist=[0., 0., 0.], ellabels=['A', 'B', 'C'], allowoutofboundscomps=True):
         self.offset=offset
-        self.ax=ax
+        
+        if isinstance(ax_subplottriplet, int):
+            self.ax=pylab.subplot(ax_subplottriplet)
+        elif isinstance(ax_subplottriplet, tuple):
+            a, b, c=ax_subplottriplet
+            self.ax=pylab.subplot(a, b, c)
+        else:
+            self.ax=ax_subplottriplet
+            
         self.allowoutofboundscomps=allowoutofboundscomps
         minlist=numpy.float32(minlist)
         self.rangelist=numpy.float32([[m, 1.-numpy.concatenate([minlist[:i], minlist[i+1:]]).sum()] for i, m in enumerate(minlist)])
-        if not ellabels is None:
-            for el, r in zip(ellabels, self.rangelist):
-                print 'range of %s is %.2f to %.2f' %((el,)+tuple(r))
+#        if not ellabels is None:
+#            for el, r in zip(ellabels, self.rangelist):
+#                print 'range of %s is %.2f to %.2f' %((el,)+tuple(r))
         self.ax.set_axis_off()
         self.ax.set_aspect('equal')
         self.ax.figure.hold('True')
@@ -79,34 +87,33 @@ class TernaryPlot:
         (xs, ys) = self.toCart(terncoordlist)
         self.mappable=self.ax.scatter(xs, ys, **kwargs)
 
-    def plot(self, terncoordlist, descriptor, **kwargs):
-        (xs, ys) = self.toCart(terncoordlist)
-        self.ax.plot(xs, ys, descriptor, **kwargs)
+#    def plot(self, terncoordlist, descriptor, **kwargs):
+#        (xs, ys) = self.toCart(terncoordlist)
+#        self.ax.plot(xs, ys, descriptor, **kwargs)
 
-    def color_comp_calc(self, terncoordlist, rangelist=None):#could be made more general to allow for endpoint colors other than RGB
-        if rangelist is None:
-            rangelist=self.rangelist
-        return numpy.array([[(c-minc)/(maxc-minc) for c, (minc, maxc) in zip(tc, rangelist)] for tc in terncoordlist])
-        
-    def colorcompplot(self, terncoordlist, descriptor, colors=None, hollow=False, **kwargs):
-        (xs, ys) = self.toCart(terncoordlist)
-        if colors is None:
-            colors=self.color_comp_calc(terncoordlist)
-        for col, x, y in zip(colors, xs, ys):
-            if hollow:
-                self.ax.plot([x], [y], descriptor, markeredgecolor=col, markerfacecolor='None',  **kwargs)
-            else:
-                self.ax.plot([x], [y], descriptor, color=col, **kwargs)
+#    def color_comp_calc(self, terncoordlist, rangelist=None):#could be made more general to allow for endpoint colors other than RGB
+#        if rangelist is None:
+#            rangelist=self.rangelist
+#        return numpy.array([[(c-minc)/(maxc-minc) for c, (minc, maxc) in zip(tc, rangelist)] for tc in terncoordlist])
+#        
+#    def colorcompplot(self, terncoordlist, descriptor, colors=None, hollow=False, **kwargs):
+#        (xs, ys) = self.toCart(terncoordlist)
+#        if colors is None:
+#            colors=self.color_comp_calc(terncoordlist)
+#        for col, x, y in zip(colors, xs, ys):
+#            if hollow:
+#                self.ax.plot([x], [y], descriptor, markeredgecolor=col, markerfacecolor='None',  **kwargs)
+#            else:
+#                self.ax.plot([x], [y], descriptor, color=col, **kwargs)
 
-    def colorbar(self, label='', **kwargs):
+    def colorbar(self, label='', axrect=[0.86, 0.1, 0.04, 0.8], **kwargs):
         'Draws the colorbar and labels it'
         if self.mappable is None:
             print 'no mappable to create colorbar'
             return
         else:            
-            #cb=pylab.colorbar()
-            self.ax.figure.subplots_adjust(right=0.85)
-            self.cbax=self.ax.figure.add_axes([0.86, 0.1, 0.04, 0.8])
+            self.ax.figure.subplots_adjust(right=axrect[0]-.01)
+            self.cbax=self.ax.figure.add_axes(axrect)
             f=self.ax.figure.colorbar
             try:
                 cb=self.ax.figure.colorbar(self.mappable, cax=self.cbax, **kwargs)
@@ -194,23 +201,23 @@ class TernaryPlot:
                 if not cs is None:
                     self.ax.text(x+xd, y+yd, cs, ha=ha, va=va, **kwargs)
     
-    def patch(self,limits, **kwargs): 
+    def patch(self,coords, limits=[], **kwargs): 
         '''Fill the area bounded by limits.
               Limits format: [[bmin,bmax],[lmin,lmax],[rmin,rmax]]
               Other arguments as for pylab.fill()'''
-        coords = []
-        bounds = [[1,-1,1],[1,0,-1],[-1,0,0],[1,-1,0],[1,1,-1],[-1,1,0],[0,-1,0],
-                  [0,1,-1],[-1,1,1],[0,-1,1],[0,0,-1],[-1,0,1]]
-        for pt in bounds:     #plug in values for these limits
-            for i in [0,1,2]:
-                if pt[i] == 1: 
-                    pt[i] = limits[i][1]
-                else:
-                    if pt[i] == 0:pt[i] = limits[i][0]
-            for i in [0,1,2]:
-                if pt[i] == -1: pt[i] = 99 - sum(pt) 
-            if self.satisfies_bounds(pt, limits): coords.append(pt) 
-        coords.append(coords[0]) #close the loop
+#        coords = []
+#        bounds = [[1,-1,1],[1,0,-1],[-1,0,0],[1,-1,0],[1,1,-1],[-1,1,0],[0,-1,0],
+#                  [0,1,-1],[-1,1,1],[0,-1,1],[0,0,-1],[-1,0,1]]
+#        for pt in bounds:     #plug in values for these limits
+#            for i in [0,1,2]:
+#                if pt[i] == 1: 
+#                    pt[i] = limits[i][1]
+#                else:
+#                    if pt[i] == 0:pt[i] = limits[i][0]
+#            for i in [0,1,2]:
+#                if pt[i] == -1: pt[i] = 99 - sum(pt) 
+#            if self.satisfies_bounds(pt, limits): coords.append(pt) 
+#        coords.append(coords[0]) #close the loop
         xs, ys = self.toCart(coords)
         self.ax.fill(xs, ys, **kwargs) 
 
@@ -225,3 +232,16 @@ class TernaryPlot:
         self.ax.legend(loc=1)
         self.ax.set_xlim(-.10, 1.10)
         self.ax.set_ylim(-.10, 1.00)
+
+    def rgb_comp(self, terncoordlist, affine=True):
+        if affine:
+            aff_tcl=self.afftrans(terncoordlist)
+        else:
+            aff_tcl=terncoordlist
+        return aff_tcl
+        
+    def plotpoints_rgb(self, terncoordlist, affine=True, **kwargs):
+        cols=self.rgb_comp(terncoordlist, affine)
+        for comp, c in zip(terncoordlist, cols):
+            self.scatter([comp], color=c, **kwargs)
+        return cols
