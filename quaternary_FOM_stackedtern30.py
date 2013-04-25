@@ -58,7 +58,7 @@ def make30ternaxes(ellabels=['A', 'B', 'C', 'D'], fig=None):
 
 
 
-def scatter_30axes(comps, fom, stpl, s=18, **kwargs):
+def scatter_30axes(comps, fom, stpl, s=18, cb=False, cbrect=(.91, .3, .03, .4), cblabel='', **kwargs):
     abc=comps[:, :3]
     abc[abc.sum(axis=1)==0.]=numpy.array([1., 1., 1.])/3.
     abc=numpy.array([c/c.sum() for c in abc])
@@ -73,7 +73,11 @@ def scatter_30axes(comps, fom, stpl, s=18, **kwargs):
         #print a, b, len(inds)
         if len(inds)>0:
             stp.scatter(abc[inds], c=fom[inds], marker='o', s=20, **kwargs)
-
-
+    if cb:
+        cbax=stp.ax.figure.add_axes(cbrect)
+        sm=cm.ScalarMappable(norm=kwargs['norm'], cmap=kwargs['cmap'])
+        sm.set_array(fom)
+        cb=stp.ax.figure.colorbar(sm, cax=cbax)
+        cb.set_label(cblabel, fontsize=18)
 #make30ternaxes()
 #pylab.show()

@@ -13,8 +13,10 @@ from myternaryutility import TernaryPlot
 from myquaternaryutility import QuaternaryPlot
 
 
-def make10ternaxes(ellabels=['A', 'B', 'C', 'D']):
-
+def make10ternaxes(ellabels=['A', 'B', 'C', 'D'], fig=None):
+    if fig is None:
+        fig=pylab.figure(figsize=(12, 8))
+        
     ax_xc=[]
     ax_yc=[]
     xcdel=[.22, .19, .1, .04, .04, .05, .03, .03, .03, .03]
@@ -27,7 +29,6 @@ def make10ternaxes(ellabels=['A', 'B', 'C', 'D']):
         #ax_yc+=[.5+((i%2)*2.-1.)*((i>0)*.1+.072*i/10)]
 
     shape1=numpy.array([.35, 1.])
-    fig=pylab.figure(figsize=(12, 8))
 
     axl=[]
     for i, xc, yc in zip(range(1, 11), ax_xc, ax_yc):
@@ -53,7 +54,7 @@ def make10ternaxes(ellabels=['A', 'B', 'C', 'D']):
 
 
 
-def scatter_10axes(comps, fom, stpl, s=18, **kwargs):
+def scatter_10axes(comps, fom, stpl, s=18, cb=False, cbrect=(.85, .3, .04, .4), cblabel='', **kwargs):# for colorbar must pass kwargs norm and cmap and optionally cblabel
     abc=comps[:, :3]
     abc[abc.sum(axis=1)==0.]=numpy.array([1., 1., 1.])/3.
     abc=numpy.array([c/c.sum() for c in abc])
@@ -62,6 +63,7 @@ def scatter_10axes(comps, fom, stpl, s=18, **kwargs):
     dlims=numpy.array([0., 1., 2., 3.])
     marks=[('o', 1., 1.), ('D', .9, .7),('s', .8, .5)]
     sl=s*numpy.array([2.3, 1., .55, .4, .4, .45, .4, .5, .8, 1., 1.5])
+    scplots=[]
     for i, (stp, sv) in enumerate(zip(stpl, sl)):
         dl=dlims+(i*3.)
         if i==9:
@@ -70,6 +72,12 @@ def scatter_10axes(comps, fom, stpl, s=18, **kwargs):
             inds=numpy.where((d30>=a) & (d30<b))[0]
             #print a, b, len(inds)
             if len(inds)>0:
-                stp.scatter(abc[inds], c=fom[inds], marker=m, s=sv*sf, alpha=al, **kwargs)
+                scplots+=[stp.scatter(abc[inds], c=fom[inds], marker=m, s=sv*sf, alpha=al, **kwargs)]
+    if cb:
+        cbax=stp.ax.figure.add_axes(cbrect)
+        sm=cm.ScalarMappable(norm=kwargs['norm'], cmap=kwargs['cmap'])
+        sm.set_array(fom)
+        cb=stp.ax.figure.colorbar(sm, cax=cbax)
+        cb.set_label(cblabel, fontsize=18)
 
 
