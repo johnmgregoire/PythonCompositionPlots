@@ -102,7 +102,9 @@ class QuaternaryPlot:
         
     def scatter(self, terncoordlist, **kwargs):
         'Scatterplots data given in triples, with the matplotlib keyword arguments'
-        
+        if len(terncoordlist)==0:
+            print 'no data for scatter plot'
+            return
         (xs, ys, zs) = self.toCart(terncoordlist)
         self.mappable=self.ax.scatter(xs, ys, zs, **kwargs)
 
@@ -151,11 +153,13 @@ class QuaternaryPlot:
             return cb
     
     def compdist(self, c1, c2):
-        return ((c1-c2)**2).sum()/2.**.5
+        return (((c1-c2)**2).sum())**.5/2.**.5
     
-    def compdist_cart(self, c1, c2):
-        return self.compdist(self.toCart([c1])[0], self.toCart([c2])[0])
-            
+    def cartdist_comp(self, c1, c2):#gives same answer as compdist.. I think
+        x1=numpy.array(self.toCart([c1])).T[0]
+        x2=numpy.array(self.toCart([c2])).T[0]
+        return (((x1-x2)**2).sum())**.5
+
     def line(self, begin, end, fmt='k-',  **kwargs):
         (xs, ys, zs) = self.toCart([begin, end])
         self.ax.plot(xs, ys, zs, fmt, **kwargs)
@@ -165,6 +169,14 @@ class QuaternaryPlot:
             for ep2 in self.cartendpts[i+1:]:
                 self.ax.plot([ep[0], ep2[0]], [ep[1], ep2[1]], [ep[2], ep2[2]], 'k-')
 
+    def singlelabeltext(self, c, takeabs=True, hidezerocomp=True, mult=1, fmtstr='%.3f'):
+        f=fmtstr
+        if takeabs:
+            c=numpy.array(c)
+            c=numpy.abs(c)
+        cs=''.join([('%s$_{'+f+'}$') %(el, x*mult) for el, x in zip(self.ellabels, c) if not (hidezerocomp and ((f %numpy.abs(x*mult))==(f %0.)))])
+        return cs
+        
     def label(self, fmtstr='%.2f', takeabs=True, ternarylabels=False, hidezerocomp=False, rndzero=.0001, **kwargs):#takeabs is to avoid a negative sign for ~0 negative compositions
         temp1=numpy.ones(8, dtype='float32')/3.
         temp1[3]=0.
@@ -306,3 +318,111 @@ class QuaternaryPlot:
         for comp, c in zip(terncoordlist, cols):
             self.scatter([comp], color=c, **kwargs)
         
+    
+    def filterbydistancefromline(self, terncoordlist, compend1, compend2, critdist, betweenpoints=True,  affine=False, invlogic=False, returnall=False): #not sure fi affine transformation makes sense here but haven't through through it
+        #see http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+        xyzarr=numpy.array(self.toCart(terncoordlist, affine=affine)).T
+        xyz1=numpy.array(self.toCart([compend1], affine=affine)).T[0]
+        xyz2=numpy.array(self.toCart([compend2], affine=affine)).T[0]
+        lineparameter=None
+        distfromlin=numpy.array([numpy.linalg.norm(numpy.cross(xyz2-xyz1, xyz1-xyz))/numpy.linalg.norm((xyz2-xyz1)) for xyz in xyzarr])
+        if betweenpoints:
+            lineparameter=numpy.array([-numpy.inner(xyz2-xyz1, xyz1-xyz)/numpy.linalg.norm((xyz2-xyz1))**2 for xyz in xyzarr])
+            if invlogic:
+                inds=numpy.where(numpy.logical_not((distfromlin<=critdist) & (lineparameter>=0) & (lineparameter<=1)))[0]
+            else:
+                inds=numpy.where((distfromlin<=critdist) & (lineparameter>=0) & (lineparameter<=1))[0]
+        else:
+            if invlogic:
+                inds=numpy.where(numpy.logical_not(distfromlin<=critdist))[0]
+            else:
+                inds=numpy.where(distfromlin<=critdist)[0]
+        if returnall:
+            if lineparameter is None:
+                lineparameter=numpy.array([-numpy.inner(xyz2-xyz1, xyz1-xyz)/numpy.linalg.norm((xyz2-xyz1))**2 for xyz in xyzarr])
+            return inds, distfromlin, lineparameter
+        else:
+            return inds
+        
+    def filterbydistancefromplane(self, terncoordlist, compvert0, compvert1, compvert2, critdist, withintriangle=True,  affine=False, invlogic=False, returnall=False): #not sure fi affine transformation makes sense here but haven't through through it
+        xyzarr=numpy.array(self.toCart(terncoordlist, affine=affine)).T
+        xyz0=numpy.array(self.toCart([compvert0], affine=affine)).T[0]
+        xyz1=numpy.array(self.toCart([compvert1], affine=affine)).T[0]
+        xyz2=numpy.array(self.toCart([compvert2], affine=affine)).T[0]
+        nhat=numpy.cross(xyz1-xyz0, xyz2-xyz1)
+        nhat/=numpy.linalg.norm(nhat)
+        
+        distfromplane=numpy.array([numpy.abs(numpy.linalg.norm(numpy.inner(nhat, xyz1-xyz))) for xyz in xyzarr])
+        intriangle=None
+        if returnall or withintriangle:
+            xphat=xyz1-xyz0
+            xphat/=numpy.linalg.norm(xphat)
+            yphat=numpy.cross(nhat, xphat)
+            xyparr=numpy.array([[numpy.inner(xyz-xyz0, xphat), numpy.inner(xyz-xyz0, yphat)] for xyz in xyzarr]) #this makes xyz0 the origin, x axis points to xyz1
+            xyp_verts=numpy.array([[numpy.inner(xyz-xyz0, xphat), numpy.inner(xyz-xyz0, yphat)] for xyz in [xyz0, xyz1, xyz2]])
+        if withintriangle:
+            intriangle=numpy.array([self.point_wrt_polygon(xyp, xyp_verts) for xyp in xyparr])
+            if invlogic:
+                inds=numpy.where(numpy.logical_not((distfromplane<=critdist) & (intriangle==1)))[0]
+            else:
+                inds=numpy.where((distfromplane<=critdist) & (intriangle==1))[0]
+        else:
+            if invlogic:
+                inds=numpy.where(numpy.logical_not(distfromplane<=critdist))[0]
+            else:
+                inds=numpy.where(distfromplane<=critdist)[0]
+        if returnall:
+            if intriangle is None:
+                intriangle=numpy.array([self.point_wrt_polygon(xyp, xyp_verts) for xyp in xyparr])
+            return inds, distfromplane, xyparr, xyp_verts,intriangle#xyparr is array of x,y projections into the selected plan with xyz0 as the origin
+        else:
+            return inds
+            
+    def plotfomalonglineparameter(self, ax, lineparameter, fom, compend1=None, compend2=None, lineparticks=numpy.linspace(0, 1, 4), **kwargs):
+        ax.plot(lineparameter, fom, **kwargs)
+        if not lineparticks is None:
+            tl=[]
+            for i in lineparticks:
+                c=compend1+(compend2-compend1)*i
+                tl+=[self.singlelabeltext(c)]
+            ax.xaxis.set_ticks(lineparticks)
+            ax.xaxis.set_ticklabels(tl)
+    
+    def plotfominselectedplane(self, ax, xyparr, fom, xyp_verts=None, vertcomps_labels=None, vertlw=1., **kwargs):
+        ax.scatter(xyparr[:, 0], xyparr[:, 1], c=fom, **kwargs)
+        xyp_verts=list(xyp_verts)
+        if not vertlw is None:
+            for xyp0, xyp1 in zip(xyp_verts, xyp_verts[1:]+[xyp_verts[0]]):
+                ax.plot([xyp0[0], xyp1[0]], [xyp0[1], xyp1[1]], 'k-', lw=vertlw)
+        if not vertcomps_labels is None:
+            for xyp, c, ha, va in zip(xyp_verts, vertcomps_labels, ['right', 'left', 'center'], ['top', 'center', 'bottom']):
+                if c is None:
+                    continue
+                ax.text(xyp[0], xyp[1], self.singlelabeltext(c), ha=ha, va=va)
+        ax.set_axis_off()
+        ax.set_aspect('equal')
+
+    def point_wrt_polygon(self, xy, xyarr_vert, inside=True,  perimeter=True, outside=False, tol=1.e-10):
+        x=xy[0]
+        y=xy[1]
+        
+        n = len(xyarr_vert)
+        insidetest =False
+
+        p1x,p1y = xyarr_vert[0]
+        for i in range(n+1):
+            p2x,p2y = xyarr_vert[i % n]
+            if y > min(p1y,p2y):
+                if y <= max(p1y,p2y):
+                    if x <= max(p1x,p2x):
+                        if p1y != p2y:
+                            xinters = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                        if p1x == p2x or x <= xinters:
+                            insidetest = not insidetest
+            p1x,p1y = p2x,p2y
+        ans=(inside and insidetest) or (outside and not insidetest)
+        if perimeter:
+            xyarr_vert_cyc=numpy.concatenate([xyarr_vert, [xyarr_vert[0]]])
+            pertest=numpy.any([numpy.cross(v2-v1, xy-v1)**2.<=(tol*(numpy.linalg.norm(v2-v1)*numpy.linalg.norm(xy-v1)))**2. for v1, v2 in zip(xyarr_vert_cyc[1:], xyarr_vert_cyc[:-1])])
+            ans=ans or pertest
+        return ans
