@@ -379,7 +379,8 @@ class QuaternaryPlot:
             return inds
             
     def plotfomalonglineparameter(self, ax, lineparameter, fom, compend1=None, compend2=None, lineparticks=numpy.linspace(0, 1, 4), **kwargs):
-        ax.plot(lineparameter, fom, **kwargs)
+        sortinds=numpy.argsort(lineparameter)
+        ax.plot(lineparameter[sortinds], fom[sortinds], **kwargs)
         if not lineparticks is None:
             tl=[]
             for i in lineparticks:

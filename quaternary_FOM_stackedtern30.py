@@ -75,7 +75,10 @@ def scatter_30axes(comps, fom, stpl, s=18, cb=False, cbrect=(.91, .3, .03, .4), 
             stp.scatter(abc[inds], c=fom[inds], marker='o', s=20, **kwargs)
     if cb:
         cbax=stp.ax.figure.add_axes(cbrect)
-        sm=cm.ScalarMappable(norm=kwargs['norm'], cmap=kwargs['cmap'])
+        if 'extend' in kwargs.keys():
+            sm=cm.ScalarMappable(norm=kwargs['norm'], cmap=kwargs['cmap'], extend=kwargs['extend'])
+        else:
+            sm=cm.ScalarMappable(norm=kwargs['norm'], cmap=kwargs['cmap'])
         sm.set_array(fom)
         cb=stp.ax.figure.colorbar(sm, cax=cbax)
         cb.set_label(cblabel, fontsize=18)
