@@ -191,7 +191,8 @@ class TernaryPlot:
                 if takeabs:
                     c=numpy.abs(c)                    
                 cs=None
-                ternarylabels=ternarylabels or numpy.all(c!=0)
+                ternarylabels=ternarylabels or numpy.all(c>1.e-6)
+                #ternarylabels=ternarylabels or numpy.all(c!=0)
                 #print c, c!=0, numpy.all(c!=0)
                 if not ternarylabels:
                     cs=fmtstr %c[s]
