@@ -378,7 +378,7 @@ class QuaternaryPlot:
         else:
             return inds
             
-    def plotfomalonglineparameter(self, ax, lineparameter, fom, compend1=None, compend2=None, lineparticks=numpy.linspace(0, 1, 4), **kwargs):
+    def plotfomalonglineparameter(self, ax, lineparameter, fom, compend1=None, compend2=None, lineparticks=numpy.linspace(0, 1, 4), ticklabelkwargdict={}, **kwargs):
         sortinds=numpy.argsort(lineparameter)
         ax.plot(lineparameter[sortinds], fom[sortinds], **kwargs)
         if not lineparticks is None:
@@ -387,7 +387,7 @@ class QuaternaryPlot:
                 c=compend1+(compend2-compend1)*i
                 tl+=[self.singlelabeltext(c)]
             ax.xaxis.set_ticks(lineparticks)
-            ax.xaxis.set_ticklabels(tl)
+            ax.xaxis.set_ticklabels(tl, **ticklabelkwargdict)
     
     def plotfominselectedplane(self, ax, xyparr, fom, xyp_verts=None, vertcomps_labels=None, vertlw=1., **kwargs):
         ax.scatter(xyparr[:, 0], xyparr[:, 1], c=fom, **kwargs)
