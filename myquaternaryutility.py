@@ -378,18 +378,18 @@ class QuaternaryPlot:
         else:
             return inds
             
-    def plotfomalonglineparameter(self, ax, lineparameter, fom, compend1=None, compend2=None, lineparticks=numpy.linspace(0, 1, 4), ticklabelkwargdict={}, **kwargs):
+    def plotfomalonglineparameter(self, ax, lineparameter, fom, compend1=None, compend2=None, lineparticks=numpy.linspace(0, 1, 4), labelfmtstr='%.3f', ticklabelkwargdict={}, **kwargs):
         sortinds=numpy.argsort(lineparameter)
         ax.plot(lineparameter[sortinds], fom[sortinds], **kwargs)
         if not lineparticks is None:
             tl=[]
             for i in lineparticks:
                 c=compend1+(compend2-compend1)*i
-                tl+=[self.singlelabeltext(c)]
+                tl+=[self.singlelabeltext(c, fmtstr=labelfmtstr)]
             ax.xaxis.set_ticks(lineparticks)
             ax.xaxis.set_ticklabels(tl, **ticklabelkwargdict)
     
-    def plotfominselectedplane(self, ax, xyparr, fom, xyp_verts=None, vertcomps_labels=None, vertlw=1., **kwargs):
+    def plotfominselectedplane(self, ax, xyparr, fom, xyp_verts=None, vertcomps_labels=None, vertlw=1., labelfmtstr='%.3f', **kwargs):
         ax.scatter(xyparr[:, 0], xyparr[:, 1], c=fom, **kwargs)
         xyp_verts=list(xyp_verts)
         if not vertlw is None:
@@ -399,7 +399,7 @@ class QuaternaryPlot:
             for xyp, c, ha, va in zip(xyp_verts, vertcomps_labels, ['right', 'left', 'center'], ['top', 'center', 'bottom']):
                 if c is None:
                     continue
-                ax.text(xyp[0], xyp[1], self.singlelabeltext(c), ha=ha, va=va)
+                ax.text(xyp[0], xyp[1], self.singlelabeltext(c, fmtstr=labelfmtstr), ha=ha, va=va, fontsize=16)
         ax.set_axis_off()
         ax.set_aspect('equal')
 
