@@ -13,14 +13,14 @@ from myternaryutility import TernaryPlot
 from myquaternaryutility import QuaternaryPlot
 
 
-def make10ternaxes(ellabels=['A', 'B', 'C', 'D'], fig=None):
+def make10ternaxes(ellabels=['A', 'B', 'C', 'D'], fig=None, fontsize=17):
     if fig is None:
         fig=pylab.figure(figsize=(12, 8))
         
     ax_xc=[]
     ax_yc=[]
-    xcdel=[.22, .19, .1, .04, .04, .05, .03, .03, .03, .03]
-    ax_yc=[.5, .6, .36, .65, .49, .33, .67, .55, .445, .32]
+    xcdel=[.18, .19, .065, .1, .04, .05, .055, .03, .02, .02]
+    ax_yc=[.49, .6, .38, .64, .48, .34, .66, .53, .42, .32]
     for i in range(10):
         if i==0:
             ax_xc+=[xcdel[i]]
@@ -29,27 +29,28 @@ def make10ternaxes(ellabels=['A', 'B', 'C', 'D'], fig=None):
         #ax_yc+=[.5+((i%2)*2.-1.)*((i>0)*.1+.072*i/10)]
 
     shape1=numpy.array([.35, 1.])
-
+    scales=[.82, 0.51, 0.39, 0.3, 0.22, 0.2, 0.17, 0.14, 0.11, 0.06]
     axl=[]
-    for i, xc, yc in zip(range(1, 11), ax_xc, ax_yc):
-        w, l=shape1/i
+    for sc, xc, yc in zip(scales, ax_xc, ax_yc):
+        w, l=shape1*sc
         axl+=[fig.add_axes([xc-w/2, yc-l/2, w, l])]
 
 
     stpl=[]
     xpos=[.27]*10
-    xpos[0:3]=[.35, .29, .28]
-    xpos[-1]=.26
+    xpos[0:3]=[.38, .36, .33]
+    xpos[-1]=.18
     for count, (ax, xp) in enumerate(zip(axl, xpos)):
         stp=TernaryPlot(ax, ellabels=ellabels[:3], offset=.03)
-        stp.label(fontsize=17)#,fontdict={'fontname':'Times New Roman'})
+        if not fontsize is None:
+            stp.label(fontsize=fontsize)#,fontdict={'fontname':'Times New Roman'})
         stpl+=[stp]
         
-        
-        if count<9:
-            stp.ax.text(xp, .8, '%s$_{%.2f-%.2f}$' %(ellabels[3], (count*.1), ((count+1)*.1)-.01), ha='right', va='center', fontsize=17)
-        else:
-            stp.ax.text(xp, .8, '%s$_{%.2f-%d}$' %(ellabels[3], (count*.1), 1), ha='right', va='center', fontsize=17)
+        if not fontsize is None:
+            if count<9:
+                stp.ax.text(xp, .8, '%s$_{%.2f-%.2f}$' %(ellabels[3], (count*.1), ((count+1)*.1)-.01), ha='right', va='center', fontsize=fontsize)
+            else:
+                stp.ax.text(xp, .8, '%s$_{%.2f-%d}$' %(ellabels[3], (count*.1), 1), ha='right', va='center', fontsize=fontsize)
     return axl, stpl
 
 
