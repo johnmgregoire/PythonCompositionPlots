@@ -1,7 +1,7 @@
 import matplotlib.cm as cm
 import numpy
 import pylab
-import h5py, operator, copy, os
+import operator, copy, os
 
 
 #pylab.rc('font',**{'family':'serif''serif':['Times New Roman']})
