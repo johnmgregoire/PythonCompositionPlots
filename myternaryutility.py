@@ -91,20 +91,20 @@ class TernaryPlot:
 #        (xs, ys) = self.toCart(terncoordlist)
 #        self.ax.plot(xs, ys, descriptor, **kwargs)
 
-#    def color_comp_calc(self, terncoordlist, rangelist=None):#could be made more general to allow for endpoint colors other than RGB
-#        if rangelist is None:
-#            rangelist=self.rangelist
-#        return numpy.array([[(c-minc)/(maxc-minc) for c, (minc, maxc) in zip(tc, rangelist)] for tc in terncoordlist])
-#        
-#    def colorcompplot(self, terncoordlist, descriptor, colors=None, hollow=False, **kwargs):
-#        (xs, ys) = self.toCart(terncoordlist)
-#        if colors is None:
-#            colors=self.color_comp_calc(terncoordlist)
-#        for col, x, y in zip(colors, xs, ys):
-#            if hollow:
-#                self.ax.plot([x], [y], descriptor, markeredgecolor=col, markerfacecolor='None',  **kwargs)
-#            else:
-#                self.ax.plot([x], [y], descriptor, color=col, **kwargs)
+    def color_comp_calc(self, terncoordlist, rangelist=None):#could be made more general to allow for endpoint colors other than RGB
+        if rangelist is None:
+            rangelist=self.rangelist
+        return numpy.array([[(c-minc)/(maxc-minc) for c, (minc, maxc) in zip(tc, rangelist)] for tc in terncoordlist])
+        
+    def colorcompplot(self, terncoordlist, descriptor, colors=None, hollow=False, **kwargs):
+        (xs, ys) = self.toCart(terncoordlist)
+        if colors is None:
+            colors=self.color_comp_calc(terncoordlist)
+        for col, x, y in zip(colors, xs, ys):
+            if hollow:
+                self.ax.plot([x], [y], descriptor, markeredgecolor=col, markerfacecolor='None',  **kwargs)
+            else:
+                self.ax.plot([x], [y], descriptor, color=col, **kwargs)
 
     def colorbar(self, label='', axrect=[0.86, 0.1, 0.04, 0.8], **kwargs):
         'Draws the colorbar and labels it'
