@@ -104,6 +104,6 @@ def plotbinarylines_quat(ax, comps, fom, ellabels=['A', 'B', 'C', 'D'], legloc=4
                 col=numpy.array([col1, col2]).mean(axis=0)
                 ax.plot([c1[j], c2[j]], [y1, y2], '-', c=col, **kwargs)
     try:
-        ax.legend(loc=legloc)
+        ax.legend(loc=legloc).draggable()
     except:
         pass
