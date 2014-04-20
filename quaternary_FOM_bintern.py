@@ -1,15 +1,15 @@
 import matplotlib.cm as cm
 import numpy
 import pylab
-import operator, copy, os
+import h5py, operator, copy, os
 
 #os.chdir('C:/Users/Gregoire/Documents/PythonCode/ternaryplot')
 from myternaryutility import TernaryPlot
 from myquaternaryutility import QuaternaryPlot
 
-def make4ternaxes(ellabels=['A', 'B', 'C', 'D']):
-    
-    fig=pylab.figure(figsize=(12, 5))
+def make4ternaxes(ellabels=['A', 'B', 'C', 'D'], fig=None):
+    if fig is None:
+        fig=pylab.figure(figsize=(12, 5))
     
     w=.21
     h=.9
@@ -28,7 +28,7 @@ def make4ternaxes(ellabels=['A', 'B', 'C', 'D']):
 
 
 
-def scatter_4axes(comps, fom, stpl, **kwargs):
+def scatter_4axes(comps, fom, stpl, cb=False, cbrect=(.9, .3, .02, .4), cblabel='', **kwargs):
     for i, stp in zip([3, 2, 1, 0], stpl):
         d=comps[:, i]
         l=[0, 1, 2, 3]
@@ -37,9 +37,20 @@ def scatter_4axes(comps, fom, stpl, **kwargs):
         inds=numpy.where(d==0.)[0]
         if len(inds)>0:
             stp.scatter(comps[inds][:, ci], c=fom[inds], **kwargs)
+    if cb:
+        cbax=stp.ax.figure.add_axes(cbrect)
+        if 'extend' in kwargs.keys():
+            sm=cm.ScalarMappable(norm=kwargs['norm'], cmap=kwargs['cmap'], extend=kwargs['extend'])
+        else:
+            sm=cm.ScalarMappable(norm=kwargs['norm'], cmap=kwargs['cmap'])
+        sm.set_array(fom)
+        cb=stp.ax.figure.colorbar(sm, cax=cbax)
+        cb.set_label(cblabel, fontsize=18)
 
-def plotbinarylines_axandinset(ellabels=['A', 'B', 'C', 'D'], mainax=[.3, .12, .6, .83], insetax=[0, .7, .2, .3], numcomppts=21, view_azim=-159, view_elev=30, **kwargs):
-    fig=pylab.figure(figsize=(8, 5))
+def plotbinarylines_axandinset(ellabels=['A', 'B', 'C', 'D'], fig=None, mainax=[.3, .12, .6, .83], insetax=[0, .7, .2, .3], numcomppts=21, view_azim=-159, view_elev=30, **kwargs):
+    if fig is None:
+        fig=pylab.figure(figsize=(8, 5))
+
     ax=fig.add_axes(mainax)
     ax2=fig.add_axes(insetax, projection='3d')
     stpq=QuaternaryPlot(ax2, ellabels=ellabels)
@@ -59,7 +70,7 @@ def plotbinarylines_axandinset(ellabels=['A', 'B', 'C', 'D'], mainax=[.3, .12, .
     stpq.label()
     return ax, ax2
     
-def plotbinarylines_quat(ax, comps, fom, ellabels=['A', 'B', 'C', 'D'], legloc=7, **kwargs):
+def plotbinarylines_quat(ax, comps, fom, ellabels=['A', 'B', 'C', 'D'], legloc=4, **kwargs):
     cb=comps>.001
     qtemp=QuaternaryPlot(None)
     ms=['<','>','^','v','s','D']
@@ -93,6 +104,6 @@ def plotbinarylines_quat(ax, comps, fom, ellabels=['A', 'B', 'C', 'D'], legloc=7
                 col=numpy.array([col1, col2]).mean(axis=0)
                 ax.plot([c1[j], c2[j]], [y1, y2], '-', c=col, **kwargs)
     try:
-        ax.legend(loc=legloc)
+        ax.legend(loc=legloc).draggable()
     except:
         pass
