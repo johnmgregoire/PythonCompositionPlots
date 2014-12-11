@@ -20,7 +20,7 @@ def make10ternaxes(ellabels=['A', 'B', 'C', 'D'], fig=None, fontsize=17):
     ax_xc=[]
     ax_yc=[]
     xcdel=[.18, .19, .065, .1, .04, .05, .055, .03, .02, .02]
-    ax_yc=[.49, .6, .38, .64, .48, .34, .66, .53, .42, .32]
+    ax_yc=[.49, .68, .30, .74, .48, .24, .78, .58, .39, .21]
     for i in range(10):
         if i==0:
             ax_xc+=[xcdel[i]]
@@ -29,7 +29,7 @@ def make10ternaxes(ellabels=['A', 'B', 'C', 'D'], fig=None, fontsize=17):
         #ax_yc+=[.5+((i%2)*2.-1.)*((i>0)*.1+.072*i/10)]
 
     shape1=numpy.array([.35, 1.])
-    scales=[.82, 0.51, 0.39, 0.3, 0.22, 0.2, 0.17, 0.14, 0.11, 0.06]
+    scales=[.82, 0.51, 0.39, 0.3, 0.22, 0.2, 0.17, 0.14, 0.11, 0.09]
     axl=[]
     for sc, xc, yc in zip(scales, ax_xc, ax_yc):
         w, l=shape1*sc
