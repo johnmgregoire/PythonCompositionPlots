@@ -63,7 +63,7 @@ def scatter_10axes(comps, fom, stpl, s=18, cb=False, cbrect=(.85, .3, .04, .4), 
     d30=numpy.round(d*30.)
     dlims=numpy.array([0., 1., 2., 3.])
     marks=[('o', 1., 1.), ('D', .9, .7),('s', .8, .5)]
-    sl=s*numpy.array([2.3, 1., .55, .4, .4, .45, .4, .5, .8, 1., 1.5])
+    sl=s*numpy.array([6.9, 3., 2.1, 1.5, 1.2, 1.35, 1.5, 1.8, 2.4, 3., 4.5])
     scplots=[]
     for i, (stp, sv) in enumerate(zip(stpl, sl)):
         dl=dlims+(i*3.)
