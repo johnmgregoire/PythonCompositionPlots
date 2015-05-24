@@ -5,7 +5,7 @@ import numpy
 class TernaryPlot:
     """send a matplitlib Axis and a ternary plot is made with the utility functions. everything fractional"""
 
-    def __init__(self, ax_subplottriplet, offset=.02, minlist=[0., 0., 0.], ellabels=['A', 'B', 'C'], allowoutofboundscomps=True):
+    def __init__(self, ax_subplottriplet, offset=.02, minlist=[0., 0., 0.], ellabels=['A', 'B', 'C'], allowoutofboundscomps=True, outline=True):
         self.offset=offset
         
         if isinstance(ax_subplottriplet, int):
@@ -29,7 +29,8 @@ class TernaryPlot:
         self.ax.set_ylim(-.10, 1.10)
         self.cartendpts=numpy.float32([[0, 0], [.5, numpy.sqrt(3.)/2.], [1, 0]])
         self.ellabels=ellabels
-        self.outline()
+        if outline:
+            self.outline()
         self.mappable=None
     
     def processterncoord(self, terncoordlist, removepoints=True):
