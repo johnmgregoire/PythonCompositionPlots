@@ -1,17 +1,20 @@
 import matplotlib.cm as cm
+import matplotlib.cm as cm
 import numpy
 import pylab
 import operator, copy, os
-
+from matplotlib.patches import CirclePolygon
 #os.chdir('C:/Users/Gregoire/Documents/PythonCode/ternaryplot')
 from myternaryutility import TernaryPlot
 
 class ternaryfaces_shells:
-    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=0.05, nintervals=10.):
+    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=0.05, nintervals=10., outlinealpha=0.2):
+        self.outlinealpha=outlinealpha
         self.nint=1.*nintervals
         self.delta=1./self.nint
         self.ternaryplot=TernaryPlot(ax, outline=False)
         self.ax=ax
+        self.ax.set_aspect(1.)
         self.offset=offset
         #self.ax.set_xlim(-.1, 2.6)
         #self.ax.set_ylim(-.1, 3.**.5/2+.1)
@@ -26,7 +29,9 @@ class ternaryfaces_shells:
             shift+=self.delta*2.+2.*self.scalefcn(nshell)
         self.ax.set_xlim(-.1, shift+self.delta+1.*self.scalefcn(nshell))
         
-        self.s=numpy.diff(ax.transData.transform([0., self.delta]))[0]
+        self.patch_xyc=lambda x, y, c, **kwargs:self.ax.add_patch(CirclePolygon((x, y),radius=self.delta/3.**.5,resolution=6, color=c, **kwargs))
+
+        #self.s=numpy.diff(self.ax.transData.transform([0., self.delta]))[0]*.2
         self.outline()
     
     def xy_skipind(self, x, y, skipind, nshell):
@@ -41,17 +46,27 @@ class ternaryfaces_shells:
         return x, y
         
     def outline(self):
-        for nshell in range(int(self.nint//3)):
-            for skipind in range(4):#skipind=3 done in ternaryplot
+        for nshell in range(int(self.nint//4)+int(self.nint%4>0)):
+            for skipind in range(4):
+                skipfirstline=skipind!=3
                 for i, ep in enumerate(self.cartendpts):
                     for ep2 in self.cartendpts[i+1:]:
+                        if skipfirstline:
+                            skipfirstline=False
+                            continue
                         x, y=self.xy_skipind(numpy.array([ep[0], ep2[0]]), numpy.array([ep[1], ep2[1]]), skipind, nshell)
-                        self.ax.plot(x, y, 'k-')
+                        self.ax.plot(x, y, 'k-', alpha=self.outlinealpha)
         
     def label(self, **kwargs):#takeabs is to avoid a negative sign for ~0 negative compositions
         for va, xst, y, inds in zip(['top', 'bottom'], [0, .5], [-3.**.5/4.-self.offset, 3.**.5/4.+self.offset], [[0, 2, 0], [1, 3, 1]]):
             for count, i in enumerate(inds):
                 self.ax.text(xst+count*1., y, self.ellabels[i], ha='center', va=va, **kwargs)
+        for nshell in range(1, int(self.nint//4)+int(self.nint%4>0)):
+            for va, xst, y, inds in zip(['top', 'bottom'], [0, .5], [-3.**.5/4.-self.offset, 3.**.5/4.+self.offset], [[2, 0], [3, 1]]):
+                for count, i in enumerate(inds):
+                    l=self.ellabels[i]+(r'$_{%d}$' %int(round(100*(1.-3*nshell*self.delta))))
+                    x=(xst+(count+1)*1.)*self.scalefcn(nshell)+self.shift_nshell[nshell]
+                    self.ax.text(x, y*self.scalefcn(nshell), l, ha='center', va=va, **kwargs)
     
     def toCart(self, quatcomps, skipinds=range(4), nshell=0):#binary and ternary lines need to be plotted multiple times so returns  set of (inds,x,y)
         qc=numpy.array(quatcomps)
@@ -68,8 +83,10 @@ class ternaryfaces_shells:
         return inds_x_y
     
     def scatter(self, quatcomps, c, skipinds=range(4), s=None, **kwargs):
-        if s is None:
-            s=self.s
+        if s=='patch':
+            patchfcn=lambda x, y, c:self.patch_xyc(x, y, c, **kwargs)
+        else:
+            patchfcn=None
         quatcomps=numpy.int32(numpy.round(quatcomps*self.nint))
         for nshell in range(int(self.nint//4)+int(self.nint%4>0)):
             ba=((quatcomps==nshell).sum(axis=1, dtype='int32')>0)&((quatcomps>=nshell).prod(axis=1, dtype='int32')>0)
@@ -78,13 +95,21 @@ class ternaryfaces_shells:
             self.shellcomps=(self.shellcomps-nshell)/(self.nint-4.*nshell)
             inds_x_y=self.toCart(self.shellcomps, skipinds=skipinds, nshell=nshell)
             for inds, x, y in inds_x_y:
-                self.ax.scatter(x, y, c=shellc[inds], **kwargs)
-        if self.nint%4==0:
+                if patchfcn is None:
+                    self.ax.scatter(x, y, c=shellc[inds], s=s, **kwargs)
+                else:
+                    [patchfcn(xv, yv, shellc[i]) for i, xv, yv in zip(inds, x, y)]
+        if self.nint%4==0: #single point with no frame
             ba=(quatcomps==self.nint//4).prod(axis=1, dtype='int32')>0
             if True in ba:
                 self.shellcomps=quatcomps[ba]#only 1 comp but might be duplicated
                 shellc=c[ba]
-                for cv in shellc:
-                    self.ax.scatter(self.shift_nshell[-1], 0, c=cv, **kwargs)
+                
+                if patchfcn is None:
+                    for cv in shellc:
+                        self.ax.scatter(self.shift_nshell[-1], 0, c=cv, s=s, **kwargs)
+                else:
+                    [self.patch_xyc(self.shift_nshell[-1], 0, cv) for cv in shellc]
+                    
 #            if nshell==0:
 #                break

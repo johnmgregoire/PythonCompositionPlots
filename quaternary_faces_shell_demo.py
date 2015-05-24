@@ -9,7 +9,7 @@ from myquaternaryutility import QuaternaryPlot
 
 
 
-intervs=20
+intervs=10
 compsint=[[b, c, (intervs-a-b-c), a] for a in numpy.arange(0,intervs+1)[::-1] for b in numpy.arange(0,intervs+1-a) for c in numpy.arange(0,intervs+1-a-b)][::-1]
 print len(compsint)
 comps=numpy.float32(compsint)/intervs
@@ -30,7 +30,7 @@ tf=ternaryfaces_shells(ax, nintervals=intervs)
 tf.label()
 
 #inds_x_y=tf.toCart(comps)
-tf.scatter(comps, cols, skipinds=[0, 1, 2, 3], edgecolors='none', marker='h')
+tf.scatter(comps, cols, skipinds=[0, 1, 2, 3], s='patch')
 
 
 pylab.show()

@@ -7,7 +7,8 @@ import operator, copy, os
 from myternaryutility import TernaryPlot
 
 class ternaryfaces_folded:
-    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=0.2, nintervals=10.):
+    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=0.2, nintervals=10., outlinealpha=0.2):
+        self.outlinealpha=outlinealpha
         self.nint=1.*nintervals
         self.delta=1./self.nint
         self.ternaryplot=TernaryPlot(ax, outline=False)
@@ -34,7 +35,7 @@ class ternaryfaces_folded:
             
         self.ax.set_xlim(-.1, shift+self.delta*1.5+1.*self.scalefcn(ntern)+.1)
         
-        self.s=numpy.diff(ax.transData.transform([0., self.delta]))[0]
+        self.s=numpy.diff(self.ax.transData.transform([0., self.delta]))[0]
         self.outline()
     
     def xy_ntern(self, x, y, ntern):
@@ -51,20 +52,29 @@ class ternaryfaces_folded:
             for i, ep in enumerate(self.cartendpts):
                 for ep2 in self.cartendpts[i+1:]:
                     x, y=self.xy_ntern(numpy.array([ep[0], ep2[0]]), numpy.array([ep[1], ep2[1]]), ntern)
-                    self.ax.plot(x, y, 'k-')
+                    self.ax.plot(x, y, 'k-', alpha=self.outlinealpha)
         
     def label(self, **kwargs):#takeabs is to avoid a negative sign for ~0 negative compositions
         for count, (va, y) in enumerate(zip(['bottom','top'], [-3.**.5/4.-self.offset, 3.**.5/4.+self.offset])):
             self.ax.text(count*.5, y, self.ellabels[count], ha='center', va=va, **kwargs)
         for i in range(0, int(self.nint)):
             y=(3.**.5/4.)*self.scalefcn(i)+self.offset
+            yd=(3.**.5/4.)*self.scalefcn(i)+self.offset*2.
             if i%2==1:
                 va='top'
+                vad='bottom'
+                yd*=-1
             else:
                 va='bottom'
                 y*=-1
+                vad='top'
             x=self.shift_ntern[i+1]+.5*self.scalefcn(i+1)
             self.ax.text(x, y, self.ellabels[(i+2)%3], ha='center', va=va, **kwargs)
+            if i==int(self.nint)-1:
+                x+=self.offset
+                yd=0.
+                vad='center'
+            self.ax.text(x, yd, self.ellabels[3]+(r'$_{%d}$' %(int(round(100*(i+1)*self.delta)))), ha='center', va=vad, **kwargs)
             
     def toCart(self, quatcomps, ntern):
         qc=numpy.array(quatcomps)

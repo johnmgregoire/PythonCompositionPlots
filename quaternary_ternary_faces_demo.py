@@ -29,11 +29,11 @@ stpquat.label()
 
 pylab.figure()
 ax=pylab.gca()
-tf=ternaryfaces(ax)
+tf=ternaryfaces(ax, nintervals=gridi)
 tf.label()
 
 #inds_x_y=tf.toCart(comps_10full)
-tf.scatter(comps_10full, cols, skipinds=[0, 1, 2, 3], s=20, edgecolors='none')
+tf.scatter(comps_10full, cols, skipinds=[0, 1, 2, 3], marker='h', edgecolors='none')
 
 
 pylab.show()

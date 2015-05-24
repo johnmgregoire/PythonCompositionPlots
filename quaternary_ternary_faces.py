@@ -7,8 +7,9 @@ import operator, copy, os
 from myternaryutility import TernaryPlot
 
 class ternaryfaces:
-    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=0.02):
-        self.ternaryplot=TernaryPlot(ax)
+    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=0.02, nintervals=10., outlinealpha=0.4):
+        self.outlinealpha=outlinealpha
+        self.ternaryplot=TernaryPlot(ax, outline=False)
         self.ax=ax
         self.offset=offset
         self.ax.set_xlim(-.1, 2.6)
@@ -16,6 +17,10 @@ class ternaryfaces:
         self.cartendpts=numpy.float32([[0, 0], [.5, numpy.sqrt(3.)/2.], [1, 0]])
         self.ellabels=ellabels
         self.outline()
+        self.nint=1.*nintervals
+        self.delta=1./self.nint
+        self.s=numpy.diff(self.ax.transData.transform([0., self.delta]))[0]
+        print self.s, self.delta, numpy.diff(self.ax.transData.transform([0., 0.03]))[0], numpy.diff(self.ax.transData.transform([0., .1]))[0]
     
     def xy_skipind(self, x, y, skipind):
         x+=([0.5, 1, 1.5, 0.][skipind])
@@ -24,11 +29,15 @@ class ternaryfaces:
         return x, y
         
     def outline(self):
-        for skipind in range(3):#skipind=3 done in ternaryplot
+        for skipind in range(4):
+            skipfirstline=skipind!=3
             for i, ep in enumerate(self.cartendpts):
                 for ep2 in self.cartendpts[i+1:]:
+                    if skipfirstline:
+                        skipfirstline=False
+                        continue
                     x, y=self.xy_skipind(numpy.array([ep[0], ep2[0]]), numpy.array([ep[1], ep2[1]]), skipind)
-                    self.ax.plot(x, y, 'k-')
+                    self.ax.plot(x, y, 'k-', alpha=self.outlinealpha)
         
     def label(self, **kwargs):#takeabs is to avoid a negative sign for ~0 negative compositions
         for va, xst, y, inds in zip(['top', 'bottom'], [0, .5], [-self.offset, 3.**.5/2+self.offset], [[0, 2, 0], [1, 3, 1]]):
@@ -49,7 +58,11 @@ class ternaryfaces:
             inds_x_y+=[(inds, x, y)]
         return inds_x_y
     
-    def scatter(self, quatcomps, c, skipinds=range(4), **kwargs):
+    def scatter(self, quatcomps, c, skipinds=range(4), s=None, **kwargs):
+        if s is None:
+            s=numpy.diff(self.ax.transData.transform([0., self.delta]))[0]
+            print s
+            #s=self.s
         inds_x_y=self.toCart(quatcomps, skipinds=skipinds)
         for inds, x, y in inds_x_y:
-            self.ax.scatter(x, y, c=c[inds], **kwargs)
+            self.ax.scatter(x, y, c=c[inds], s=s, **kwargs)
