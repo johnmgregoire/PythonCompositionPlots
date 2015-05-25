@@ -9,7 +9,7 @@ from myquaternaryutility import QuaternaryPlot
 
 
 
-gridi=30
+gridi=20
 comps_10full=[(a*1./gridi, b*1./gridi, c*1./gridi, (gridi-a-b-c)*1./gridi) for a in numpy.arange(0,1+gridi) for b in numpy.arange(0,1+gridi-a) for c in numpy.arange(0,1+gridi-a-b)]
 comps_10full=list(set(comps_10full))
 print len(comps_10full)
@@ -33,7 +33,7 @@ tf=ternaryfaces(ax, nintervals=gridi)
 tf.label()
 
 #inds_x_y=tf.toCart(comps_10full)
-tf.scatter(comps_10full, cols, skipinds=[0, 1, 2, 3], marker='h', edgecolors='none')
+tf.scatter(comps_10full, cols, skipinds=[0, 1, 2, 3], s='patch')
 
 
 pylab.show()

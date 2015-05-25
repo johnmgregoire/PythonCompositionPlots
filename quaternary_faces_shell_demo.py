@@ -9,7 +9,7 @@ from myquaternaryutility import QuaternaryPlot
 
 
 
-intervs=10
+intervs=20
 compsint=[[b, c, (intervs-a-b-c), a] for a in numpy.arange(0,intervs+1)[::-1] for b in numpy.arange(0,intervs+1-a) for c in numpy.arange(0,intervs+1-a-b)][::-1]
 print len(compsint)
 comps=numpy.float32(compsint)/intervs

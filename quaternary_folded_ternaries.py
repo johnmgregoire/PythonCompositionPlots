@@ -2,12 +2,12 @@ import matplotlib.cm as cm
 import numpy
 import pylab
 import operator, copy, os
-
+from matplotlib.patches import CirclePolygon
 #os.chdir('C:/Users/Gregoire/Documents/PythonCode/ternaryplot')
 from myternaryutility import TernaryPlot
 
 class ternaryfaces_folded:
-    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=0.2, nintervals=10., outlinealpha=0.2):
+    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=None, nintervals=10., outlinealpha=0.2):
         self.outlinealpha=outlinealpha
         self.nint=1.*nintervals
         self.delta=1./self.nint
@@ -34,9 +34,11 @@ class ternaryfaces_folded:
 #                perminds=[perminds[i] for i in [1, 0, 2]]
             
         self.ax.set_xlim(-.1, shift+self.delta*1.5+1.*self.scalefcn(ntern)+.1)
-        
-        self.s=numpy.diff(self.ax.transData.transform([0., self.delta]))[0]
+                
+        self.patch_xyc=lambda x, y, c, **kwargs:self.ax.add_patch(CirclePolygon((x, y),radius=self.delta/3.**.5,resolution=6, color=c, **kwargs))
         self.outline()
+        if offset is None:
+            self.offset=self.delta
     
     def xy_ntern(self, x, y, ntern):
         if ntern%2==1:
@@ -55,26 +57,26 @@ class ternaryfaces_folded:
                     self.ax.plot(x, y, 'k-', alpha=self.outlinealpha)
         
     def label(self, **kwargs):#takeabs is to avoid a negative sign for ~0 negative compositions
-        for count, (va, y) in enumerate(zip(['bottom','top'], [-3.**.5/4.-self.offset, 3.**.5/4.+self.offset])):
+        for count, (va, y) in enumerate(zip(['top','bottom'], [-3.**.5/4.-self.offset, 3.**.5/4.+self.offset])):
             self.ax.text(count*.5, y, self.ellabels[count], ha='center', va=va, **kwargs)
         for i in range(0, int(self.nint)):
             y=(3.**.5/4.)*self.scalefcn(i)+self.offset
-            yd=(3.**.5/4.)*self.scalefcn(i)+self.offset*2.
+            yd=(3.**.5/4.)*self.scalefcn(i)+self.offset*1.5
             if i%2==1:
-                va='top'
-                vad='bottom'
+                va='bottom'
+                vad='top'
                 yd*=-1
             else:
-                va='bottom'
+                va='top'
                 y*=-1
-                vad='top'
+                vad='bottom'
             x=self.shift_ntern[i+1]+.5*self.scalefcn(i+1)
             self.ax.text(x, y, self.ellabels[(i+2)%3], ha='center', va=va, **kwargs)
             if i==int(self.nint)-1:
-                x+=self.offset
+                x+=self.scalefcn(i+1)+self.offset
                 yd=0.
                 vad='center'
-            self.ax.text(x, yd, self.ellabels[3]+(r'$_{%d}$' %(int(round(100*(i+1)*self.delta)))), ha='center', va=vad, **kwargs)
+                self.ax.text(x, yd, self.ellabels[3]+(r'$_{%d}$' %(int(round(100*(i+1)*self.delta)))), ha='left', va=vad, **kwargs)
             
     def toCart(self, quatcomps, ntern):
         qc=numpy.array(quatcomps)
@@ -83,9 +85,11 @@ class ternaryfaces_folded:
         x, y=self.xy_ntern(x, y, ntern)
         return x, y
     
-    def scatter(self, quatcomps, c,  s=None, **kwargs):
-        if s is None:
-            s=self.s
+    def scatter(self, quatcomps, c, s='patch', **kwargs):
+        if s=='patch':
+            patchfcn=lambda x, y, c:self.patch_xyc(x, y, c, **kwargs)
+        else:
+            patchfcn=None
         quatcomps=numpy.int32(numpy.round(quatcomps*self.nint))
         for ntern in range(int(self.nint)):
             ba=quatcomps[:, -1]==ntern
@@ -93,12 +97,17 @@ class ternaryfaces_folded:
             shellc=c[ba]
             self.shellcomps=self.shellcomps[:, :-1]/(self.nint-ntern)
             x, y=self.toCart(self.shellcomps, ntern)
-            self.ax.scatter(x, y, c=shellc, **kwargs)
+            if patchfcn is None:
+                self.ax.scatter(x, y, c=shellc, **kwargs)
+            else:
+                map(patchfcn, x, y, shellc)
         ba=quatcomps[:, -1]==self.nint
         if True in ba:
             self.shellcomps=quatcomps[ba]#only 1 comp but might be duplicated
             shellc=c[ba]
-            for cv in shellc:
-                self.ax.scatter(self.shift_ntern[-1], 0, c=cv, **kwargs)
-#            if ntern==0:
-#                break
+            if patchfcn is None:
+                for cv in shellc:
+                    self.ax.scatter(self.shift_ntern[-1], 0, c=cv, s=s, **kwargs)
+            else:
+                [patchfcn(self.shift_ntern[-1], 0, cv) for cv in shellc]
+ 

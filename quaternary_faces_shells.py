@@ -8,14 +8,13 @@ from matplotlib.patches import CirclePolygon
 from myternaryutility import TernaryPlot
 
 class ternaryfaces_shells:
-    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=0.05, nintervals=10., outlinealpha=0.2):
+    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=None, nintervals=10., outlinealpha=0.2):
         self.outlinealpha=outlinealpha
         self.nint=1.*nintervals
         self.delta=1./self.nint
         self.ternaryplot=TernaryPlot(ax, outline=False)
         self.ax=ax
         self.ax.set_aspect(1.)
-        self.offset=offset
         #self.ax.set_xlim(-.1, 2.6)
         #self.ax.set_ylim(-.1, 3.**.5/2+.1)
         self.ax.set_ylim(-.1-3.**.5/4., .1+3.**.5/4.)
@@ -30,9 +29,9 @@ class ternaryfaces_shells:
         self.ax.set_xlim(-.1, shift+self.delta+1.*self.scalefcn(nshell))
         
         self.patch_xyc=lambda x, y, c, **kwargs:self.ax.add_patch(CirclePolygon((x, y),radius=self.delta/3.**.5,resolution=6, color=c, **kwargs))
-
-        #self.s=numpy.diff(self.ax.transData.transform([0., self.delta]))[0]*.2
         self.outline()
+        if offset is None:
+            self.offset=self.delta
     
     def xy_skipind(self, x, y, skipind, nshell):
         
@@ -62,11 +61,11 @@ class ternaryfaces_shells:
             for count, i in enumerate(inds):
                 self.ax.text(xst+count*1., y, self.ellabels[i], ha='center', va=va, **kwargs)
         for nshell in range(1, int(self.nint//4)+int(self.nint%4>0)):
-            for va, xst, y, inds in zip(['top', 'bottom'], [0, .5], [-3.**.5/4.-self.offset, 3.**.5/4.+self.offset], [[2, 0], [3, 1]]):
+            for va, xst, y, inds in zip(['top', 'bottom'], [0, .5], [-3.**.5/4.*self.scalefcn(nshell)-self.offset, 3.**.5/4.*self.scalefcn(nshell)+self.offset], [[2, 0], [3, 1]]):
                 for count, i in enumerate(inds):
                     l=self.ellabels[i]+(r'$_{%d}$' %int(round(100*(1.-3*nshell*self.delta))))
                     x=(xst+(count+1)*1.)*self.scalefcn(nshell)+self.shift_nshell[nshell]
-                    self.ax.text(x, y*self.scalefcn(nshell), l, ha='center', va=va, **kwargs)
+                    self.ax.text(x, y, l, ha='center', va=va, **kwargs)
     
     def toCart(self, quatcomps, skipinds=range(4), nshell=0):#binary and ternary lines need to be plotted multiple times so returns  set of (inds,x,y)
         qc=numpy.array(quatcomps)
@@ -82,7 +81,7 @@ class ternaryfaces_shells:
             inds_x_y+=[(inds, x, y)]
         return inds_x_y
     
-    def scatter(self, quatcomps, c, skipinds=range(4), s=None, **kwargs):
+    def scatter(self, quatcomps, c, skipinds=range(4), s='patch', **kwargs):
         if s=='patch':
             patchfcn=lambda x, y, c:self.patch_xyc(x, y, c, **kwargs)
         else:
@@ -98,7 +97,7 @@ class ternaryfaces_shells:
                 if patchfcn is None:
                     self.ax.scatter(x, y, c=shellc[inds], s=s, **kwargs)
                 else:
-                    [patchfcn(xv, yv, shellc[i]) for i, xv, yv in zip(inds, x, y)]
+                    map(patchfcn, x, y, shellc[inds])
         if self.nint%4==0: #single point with no frame
             ba=(quatcomps==self.nint//4).prod(axis=1, dtype='int32')>0
             if True in ba:
@@ -109,7 +108,7 @@ class ternaryfaces_shells:
                     for cv in shellc:
                         self.ax.scatter(self.shift_nshell[-1], 0, c=cv, s=s, **kwargs)
                 else:
-                    [self.patch_xyc(self.shift_nshell[-1], 0, cv) for cv in shellc]
+                    [patchfcn(self.shift_nshell[-1], 0, cv) for cv in shellc]
                     
 #            if nshell==0:
 #                break

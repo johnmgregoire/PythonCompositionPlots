@@ -2,16 +2,16 @@ import matplotlib.cm as cm
 import numpy
 import pylab
 import operator, copy, os
-
+from matplotlib.patches import CirclePolygon
 #os.chdir('C:/Users/Gregoire/Documents/PythonCode/ternaryplot')
 from myternaryutility import TernaryPlot
 
 class ternaryfaces:
-    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=0.02, nintervals=10., outlinealpha=0.4):
+    def __init__(self, ax, ellabels=['A', 'B', 'C', 'D'], offset=None, nintervals=10., outlinealpha=0.4):
         self.outlinealpha=outlinealpha
         self.ternaryplot=TernaryPlot(ax, outline=False)
         self.ax=ax
-        self.offset=offset
+        
         self.ax.set_xlim(-.1, 2.6)
         self.ax.set_ylim(-.1, 3.**.5/2+.1)
         self.cartendpts=numpy.float32([[0, 0], [.5, numpy.sqrt(3.)/2.], [1, 0]])
@@ -19,8 +19,9 @@ class ternaryfaces:
         self.outline()
         self.nint=1.*nintervals
         self.delta=1./self.nint
-        self.s=numpy.diff(self.ax.transData.transform([0., self.delta]))[0]
-        print self.s, self.delta, numpy.diff(self.ax.transData.transform([0., 0.03]))[0], numpy.diff(self.ax.transData.transform([0., .1]))[0]
+        self.patch_xyc=lambda x, y, c, **kwargs:self.ax.add_patch(CirclePolygon((x, y),radius=self.delta/3.**.5,resolution=6, color=c, **kwargs))
+        if offset is None:
+            self.offset=self.delta
     
     def xy_skipind(self, x, y, skipind):
         x+=([0.5, 1, 1.5, 0.][skipind])
@@ -58,11 +59,14 @@ class ternaryfaces:
             inds_x_y+=[(inds, x, y)]
         return inds_x_y
     
-    def scatter(self, quatcomps, c, skipinds=range(4), s=None, **kwargs):
-        if s is None:
-            s=numpy.diff(self.ax.transData.transform([0., self.delta]))[0]
-            print s
-            #s=self.s
+    def scatter(self, quatcomps, c, skipinds=range(4), s='patch', **kwargs):
+        if s=='patch':
+            patchfcn=lambda x, y, c:self.patch_xyc(x, y, c, **kwargs)
+        else:
+            patchfcn=None
         inds_x_y=self.toCart(quatcomps, skipinds=skipinds)
         for inds, x, y in inds_x_y:
-            self.ax.scatter(x, y, c=c[inds], s=s, **kwargs)
+            if patchfcn is None:
+                self.ax.scatter(x, y, c=c[inds], s=s, **kwargs)
+            else:
+                map(patchfcn, x, y, c[inds])
