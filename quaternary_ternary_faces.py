@@ -54,6 +54,8 @@ class ternaryfaces:
         inds_x_y=[]
         for si in skipinds:
             inds=numpy.where(qc[:, si]==0.)[0]
+            if len(inds)==0:
+                continue
             xt, yt=self.ternaryplot.toCart(qc[inds][:, qindsfortern_skipind[si]])
             x, y=self.xy_skipind(xt, yt, si)
             inds_x_y+=[(inds, x, y)]

@@ -8,6 +8,9 @@ import operator
 import matplotlib
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+
+
+
 from matplotlib.figure import Figure
 import numpy.ma as ma
 import matplotlib.colors as colors
@@ -138,8 +141,9 @@ class plotwidget(FigureCanvas):
         FigureCanvas.setSizePolicy(self, QSizePolicy.Expanding, QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
         #NavigationToolbar(self, parent)
-        NavigationToolbar(self, self)
-
+        
+        self.toolbar=NavigationToolbar(self.figure.canvas, self)
+        self.toolbar.setMovable(True)#DOESNT DO ANYTHING
         self.mpl_connect('button_press_event', self.myclick)
         self.clicklist=[]
 
@@ -156,7 +160,7 @@ if __name__ == "__main__":
             super(MainMenu, self).__init__(None)
             self.ui=plottypeDialog(self, **kwargs)
             
-            intervs=10
+            intervs=20
             compsint=[[b, c, (intervs-a-b-c), a] for a in numpy.arange(0,intervs+1)[::-1] for b in numpy.arange(0,intervs+1-a) for c in numpy.arange(0,intervs+1-a-b)][::-1]
             print len(compsint)
             comps=numpy.float32(compsint)/intervs

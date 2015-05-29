@@ -72,11 +72,15 @@ class ternaryfaces_folded:
                 vad='bottom'
             x=self.shift_ntern[i+1]+.5*self.scalefcn(i+1)
             self.ax.text(x, y, self.ellabels[(i+2)%3], ha='center', va=va, **kwargs)
+            
             if i==int(self.nint)-1:
                 x+=self.scalefcn(i+1)+self.offset
                 yd=0.
                 vad='center'
-                self.ax.text(x, yd, self.ellabels[3]+(r'$_{%d}$' %(int(round(100*(i+1)*self.delta)))), ha='left', va=vad, **kwargs)
+                had='left'
+            else:
+                had='center'
+            self.ax.text(x, yd, self.ellabels[3]+(r'$_{%d}$' %(int(round(100*(i+1)*self.delta)))), ha=had, va=vad, **kwargs)
             
     def toCart(self, quatcomps, ntern):
         qc=numpy.array(quatcomps)
@@ -96,6 +100,8 @@ class ternaryfaces_folded:
             self.shellcomps=quatcomps[ba]
             shellc=c[ba]
             self.shellcomps=self.shellcomps[:, :-1]/(self.nint-ntern)
+            if len(self.shellcomps)==0:
+                continue
             x, y=self.toCart(self.shellcomps, ntern)
             if patchfcn is None:
                 self.ax.scatter(x, y, c=shellc, **kwargs)
