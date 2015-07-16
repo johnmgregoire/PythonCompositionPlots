@@ -5,7 +5,7 @@ from mpl_toolkits import mplot3d
 #from myternaryutility import TernaryPlot
 class QuaternaryPlot:
     """send a matplitlib Axis and a ternary plot is made with the utility functions. everything fractional"""
-    def __init__(self, ax_subplottriplet=None, offset=.08, minlist=[0., 0., 0., 0.], ellabels=['A', 'B', 'C', 'D'], allowoutofboundscomps=True):
+    def __init__(self, ax_subplottriplet=None, offset=.08, minlist=[0., 0., 0., 0.], ellabels=['A', 'B', 'C', 'D'], allowoutofboundscomps=True, outline=True):
         self.allowoutofboundscomps=allowoutofboundscomps
         minlist=numpy.float32(minlist)
         self.rangelist=numpy.float32([[m, 1.-numpy.concatenate([minlist[:i], minlist[i+1:]]).sum()] for i, m in enumerate(minlist)])
@@ -30,7 +30,8 @@ class QuaternaryPlot:
             self.ax.set_ylim(-.10, 1.10)
             self.cartendpts=numpy.float32([[0, 0, 0], [.5, numpy.sqrt(3.)/2., 0], [1, 0, 0], [.5, .5/numpy.sqrt(3.), numpy.sqrt(2./3.)]])
             self.ellabels=ellabels
-            self.outline()
+            if outline:
+                self.outline()
             self.mappable=None
     
     def set_projection(self, azim=None, elev=None):
@@ -101,13 +102,20 @@ class QuaternaryPlot:
         return terncoordlist
         
     def scatter(self, terncoordlist, **kwargs):
-        'Scatterplots data given in triples, with the matplotlib keyword arguments'
         if len(terncoordlist)==0:
             print 'no data for scatter plot'
             return
         (xs, ys, zs) = self.toCart(terncoordlist)
         self.mappable=self.ax.scatter(xs, ys, zs, **kwargs)
 
+    def plot3D(self, terncoordlist, cols, **kwargs):
+        if len(terncoordlist)==0:
+            print 'no data for scatter plot'
+            return
+        (xs, ys, zs) = self.toCart(terncoordlist)
+        for x, y, z, c in zip(xs, ys, zs, cols):
+            self.ax.plot3D([x], [y], [z], c=c, **kwargs)
+        
     def scalarmap(self, vals, norm, cmap):
         self.mappable=cm.ScalarMappable(norm=norm, cmap=cmap)
         self.mappable.set_array(vals)
