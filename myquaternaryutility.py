@@ -29,7 +29,6 @@ class QuaternaryPlot:
             self.ax.set_xlim(-.10, 1.10)
             self.ax.set_ylim(-.10, 1.10)
             self.cartendpts=numpy.float32([[0, 0, 0], [.5, numpy.sqrt(3.)/2., 0], [1, 0, 0], [.5, .5/numpy.sqrt(3.), numpy.sqrt(2./3.)]])
-            self.cartendpts=numpy.float32([pt-numpy.float32([0.5, 0.2887, 0.2041]) for pt in self.cartendpts])
             self.ellabels=ellabels
             if outline:
                 self.outline()
@@ -73,11 +72,6 @@ class QuaternaryPlot:
         x=1.-a-b/2.-d/2.
         y=b/2.*(3.**.5)+d/2./(3.**.5)
         z=d*(2.**.5)/(3.**.5)
-        
-        #this shift centers the tetr. at 0,0,0
-        x-=0.5
-        y-=0.2887
-        z-=0.2041
         return (x, y, z)
 
     def toComp(self, xycoordlist, process=True, affine=True):
@@ -89,11 +83,6 @@ class QuaternaryPlot:
         x=xycoordlist[:, 0]
         y=xycoordlist[:, 1]
         z=xycoordlist[:, 2]
-        
-        x+=0.5
-        y+=0.2887
-        z+=0.2041
-        
         d=numpy.sqrt(3./2.)*z
         b=y*2./numpy.sqrt(3.)-z/numpy.sqrt(6.)
         a=1.-x-b/2.-d/2.
