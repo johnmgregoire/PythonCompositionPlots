@@ -48,6 +48,15 @@ class ternaryfaces_folded:
         x*=self.scalefcn(ntern)
         x+=self.shift_ntern[ntern]
         return x, y
+    
+    def invert_xy_ntern(self, x, y, ntern):
+        x-=self.shift_ntern[ntern]
+        x/=self.scalefcn(ntern)
+        y/=self.scalefcn(ntern)
+        y+=3.**.5/2/2.
+        if ntern%2==1:
+            y=-1.*y+3.**.5/2
+        return x, y
         
     def outline(self):
         for ntern in range(int(self.nint)):
@@ -117,3 +126,19 @@ class ternaryfaces_folded:
             else:
                 [patchfcn(self.shift_ntern[-1], 0, cv) for cv in shellc]
  
+    def toComp(self, x, y, skipinds=range(4)):#takes a single x,y coord from the axes and gets the tirangle by trial and error and converts to a,b,c,d/ skipinds must be the same as that used in .scatter()
+        c=numpy.zeros(4, dtype='float64')
+        for ntern in range(int(self.nint)):
+            xi, yi=self.invert_xy_ntern(x, y, ntern)
+            abc=self.ternaryplot.toComp([[xi, yi]])
+            if numpy.all((abc>=0.)&(abc<=1.)):
+                print ntern
+                c[self.perminds_ntern[ntern]]=abc*(self.nint-ntern)
+                c[-1]=ntern
+                c*=self.delta
+                return c
+        
+        xcrit, garb=self.xy_ntern(.5,0,ntern)#in the last ternay plot take the x mid-point. y value deosnt' matter
+        if x>xcrit:
+            return numpy.float64([0, 0, 0, 1])
+        return None

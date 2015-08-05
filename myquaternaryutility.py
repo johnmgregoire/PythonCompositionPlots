@@ -4,11 +4,14 @@ import numpy
 from mpl_toolkits import mplot3d
 #from myternaryutility import TernaryPlot
 class QuaternaryPlot:
-    """send a matplitlib Axis and a ternary plot is made with the utility functions. everything fractional"""
     def __init__(self, ax_subplottriplet=None, offset=.08, minlist=[0., 0., 0., 0.], ellabels=['A', 'B', 'C', 'D'], allowoutofboundscomps=True, outline=True):
         self.allowoutofboundscomps=allowoutofboundscomps
         minlist=numpy.float32(minlist)
         self.rangelist=numpy.float32([[m, 1.-numpy.concatenate([minlist[:i], minlist[i+1:]]).sum()] for i, m in enumerate(minlist)])
+        
+        self.cartendpts=numpy.float32([[0, 0, 0], [.5, numpy.sqrt(3.)/2., 0], [1, 0, 0], [.5, .5/numpy.sqrt(3.), numpy.sqrt(2./3.)]])
+        self.cartendpts=numpy.float32([pt-numpy.float32([0.5, 0.2887, 0.2041]) for pt in self.cartendpts])
+        self.ellabels=ellabels
         
         if not ax_subplottriplet is None:
             self.offset=offset
@@ -28,9 +31,8 @@ class QuaternaryPlot:
             self.ax.figure.hold('True')
             self.ax.set_xlim(-.10, 1.10)
             self.ax.set_ylim(-.10, 1.10)
-            self.cartendpts=numpy.float32([[0, 0, 0], [.5, numpy.sqrt(3.)/2., 0], [1, 0, 0], [.5, .5/numpy.sqrt(3.), numpy.sqrt(2./3.)]])
-            self.cartendpts=numpy.float32([pt-numpy.float32([0.5, 0.2887, 0.2041]) for pt in self.cartendpts])
-            self.ellabels=ellabels
+            
+            
             if outline:
                 self.outline()
             self.mappable=None

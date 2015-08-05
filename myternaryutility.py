@@ -3,35 +3,35 @@ import matplotlib.cm as cm
 import numpy
 
 class TernaryPlot:
-    """send a matplitlib Axis and a ternary plot is made with the utility functions. everything fractional"""
-
     def __init__(self, ax_subplottriplet, offset=.02, minlist=[0., 0., 0.], ellabels=['A', 'B', 'C'], allowoutofboundscomps=True, outline=True):
         self.offset=offset
         
-        if isinstance(ax_subplottriplet, int):
-            self.ax=pylab.subplot(ax_subplottriplet)
-        elif isinstance(ax_subplottriplet, tuple):
-            a, b, c=ax_subplottriplet
-            self.ax=pylab.subplot(a, b, c)
-        else:
-            self.ax=ax_subplottriplet
-            
-        self.allowoutofboundscomps=allowoutofboundscomps
-        minlist=numpy.float32(minlist)
-        self.rangelist=numpy.float32([[m, 1.-numpy.concatenate([minlist[:i], minlist[i+1:]]).sum()] for i, m in enumerate(minlist)])
-#        if not ellabels is None:
-#            for el, r in zip(ellabels, self.rangelist):
-#                print 'range of %s is %.2f to %.2f' %((el,)+tuple(r))
-        self.ax.set_axis_off()
-        self.ax.set_aspect('equal')
-        self.ax.figure.hold('True')
-        self.ax.set_xlim(-.10, 1.10)
-        self.ax.set_ylim(-.10, 1.10)
         self.cartendpts=numpy.float32([[0, 0], [.5, numpy.sqrt(3.)/2.], [1, 0]])
         self.ellabels=ellabels
-        if outline:
-            self.outline()
-        self.mappable=None
+        if not ax_subplottriplet is None:
+            if isinstance(ax_subplottriplet, int):
+                self.ax=pylab.subplot(ax_subplottriplet)
+            elif isinstance(ax_subplottriplet, tuple):
+                a, b, c=ax_subplottriplet
+                self.ax=pylab.subplot(a, b, c)
+            else:
+                self.ax=ax_subplottriplet
+                
+            self.allowoutofboundscomps=allowoutofboundscomps
+            minlist=numpy.float32(minlist)
+            self.rangelist=numpy.float32([[m, 1.-numpy.concatenate([minlist[:i], minlist[i+1:]]).sum()] for i, m in enumerate(minlist)])
+    #        if not ellabels is None:
+    #            for el, r in zip(ellabels, self.rangelist):
+    #                print 'range of %s is %.2f to %.2f' %((el,)+tuple(r))
+            self.ax.set_axis_off()
+            self.ax.set_aspect('equal')
+            self.ax.figure.hold('True')
+            self.ax.set_xlim(-.10, 1.10)
+            self.ax.set_ylim(-.10, 1.10)
+            
+            if outline:
+                self.outline()
+            self.mappable=None
     
     def processterncoord(self, terncoordlist, removepoints=True):
         terncoordlist=numpy.float32(terncoordlist)

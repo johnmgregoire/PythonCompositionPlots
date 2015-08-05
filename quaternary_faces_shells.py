@@ -34,7 +34,7 @@ class ternaryfaces_shells:
             self.outline()
         if offset is None:
             self.offset=self.delta
-    
+        self.qindsfortern_skipind=[[1, 2, 3], [2, 3, 0], [3, 0, 1], [0, 1, 2]]#sets the order of elements assuming mirror over y for skipA and skipC
     def xy_skipind(self, x, y, skipind, nshell):
         
         if skipind%2==0:
@@ -44,6 +44,16 @@ class ternaryfaces_shells:
         x+=([0.5, 1, 1.5, 0.][skipind])
         x*=self.scalefcn(nshell)
         x+=self.shift_nshell[nshell]
+        return x, y
+    
+    def invert_xy_skipind(self, x, y, skipind, nshell):
+        x-=self.shift_nshell[nshell]
+        x/=self.scalefcn(nshell)
+        x-=([0.5, 1, 1.5, 0.][skipind])
+        y/=self.scalefcn(nshell)
+        y+=3.**.5/2/2.
+        if skipind%2==0:
+            y=-1.*y+3.**.5/2
         return x, y
         
     def outline(self, **kwargs):
@@ -84,13 +94,13 @@ class ternaryfaces_shells:
         #qc=qc[(qc==0.).sum(axis=1)>0]
 #        x=numpy.empty(len(qc), dtype='float32')
 #        y=numpy.empty(len(qc), dtype='float32')
-        qindsfortern_skipind=[[1, 2, 3], [2, 3, 0], [3, 0, 1], [0, 1, 2]]#sets the order of elements assuming mirror over y for skipA and skipC
+        
         inds_x_y=[]
         for si in skipinds:
             inds=numpy.where(qc[:, si]==0.)[0]
             if len(inds)==0:
                 continue
-            xt, yt=self.ternaryplot.toCart(qc[inds][:, qindsfortern_skipind[si]])
+            xt, yt=self.ternaryplot.toCart(qc[inds][:, self.qindsfortern_skipind[si]])
             x, y=self.xy_skipind(xt, yt, si, nshell)
             inds_x_y+=[(inds, x, y)]
         return inds_x_y
@@ -180,3 +190,20 @@ class ternaryfaces_shells:
                 if fontsize>0:
                     q.label(ha='center', va='center', fontsize=fontsize)
                 q.set_projection(azim=azim, elev=elev)
+                
+    def toComp(self, x, y, skipinds=range(4)):#takes a single x,y coord from the axes and gets the tirangle by trial and error and converts to a,b,c,d/ skipinds must be the same as that used in .scatter()
+        c=numpy.zeros(4, dtype='float64')
+        for nshell in range(int(self.nint//4)+int(self.nint%4>0)):
+            for si in skipinds:
+                xi, yi=self.invert_xy_skipind(x, y, si, nshell)
+                abc=self.ternaryplot.toComp([[xi, yi]])
+                if numpy.all((abc>=0.)&(abc<=1.)):
+                    c[self.qindsfortern_skipind[si]]=numpy.round((abc*(self.nint-4.*nshell)+nshell))
+                    c[si]=nshell
+                    c*=self.delta
+                    return c
+        if self.nint%4==0:#if there is an equi-atomic  single point outside the triangles, then count it as clicked if outside triagnels with x bigger than middle of the last triangle,
+            xcrit, garb=self.xy_skipind(.5,0,si, nshell)#in the last ternay plot take the x mid-point. y value deosnt' matter
+            if x>xcrit:
+                return numpy.ones(4, dtype='float64')/4.
+        return None

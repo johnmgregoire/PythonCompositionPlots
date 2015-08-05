@@ -22,9 +22,16 @@ class ternaryfaces:
         self.patch_xyc=lambda x, y, c, **kwargs:self.ax.add_patch(CirclePolygon((x, y),radius=self.delta/3.**.5,resolution=6, color=c, **kwargs))
         if offset is None:
             self.offset=self.delta
-    
+        self.qindsfortern_skipind=[[1, 2, 3], [2, 3, 0], [3, 0, 1], [0, 1, 2]]#sets the order of elements assuming mirror over y for skipA and skipC
+        
     def xy_skipind(self, x, y, skipind):
         x+=([0.5, 1, 1.5, 0.][skipind])
+        if skipind%2==0:
+            y=-1.*y+3.**.5/2
+        return x, y
+    
+    def invert_xy_skipind(self, x, y, skipind):
+        x-=([0.5, 1, 1.5, 0.][skipind])
         if skipind%2==0:
             y=-1.*y+3.**.5/2
         return x, y
@@ -50,13 +57,13 @@ class ternaryfaces:
         #qc=qc[(qc==0.).sum(axis=1)>0]
 #        x=numpy.empty(len(qc), dtype='float32')
 #        y=numpy.empty(len(qc), dtype='float32')
-        qindsfortern_skipind=[[1, 2, 3], [2, 3, 0], [3, 0, 1], [0, 1, 2]]#sets the order of elements assuming mirror over y for skipA and skipC
+        
         inds_x_y=[]
         for si in skipinds:
             inds=numpy.where(qc[:, si]==0.)[0]
             if len(inds)==0:
                 continue
-            xt, yt=self.ternaryplot.toCart(qc[inds][:, qindsfortern_skipind[si]])
+            xt, yt=self.ternaryplot.toCart(qc[inds][:, self.qindsfortern_skipind[si]])
             x, y=self.xy_skipind(xt, yt, si)
             inds_x_y+=[(inds, x, y)]
         return inds_x_y
@@ -72,3 +79,14 @@ class ternaryfaces:
                 self.ax.scatter(x, y, c=c[inds], s=s, **kwargs)
             else:
                 map(patchfcn, x, y, c[inds])
+                
+    def toComp(self, x, y, skipinds=range(4)):#takes a single x,y coord from the axes and gets the tirangle by trial and error and converts to a,b,c,d/ skipinds must be the same as that used in .scatter()
+        c=numpy.zeros(4, dtype='float64')
+        for si in skipinds:
+            xi, yi=self.invert_xy_skipind(x, y, si)
+            abc=self.ternaryplot.toComp([[xi, yi]])
+            if numpy.all((abc>=0.)&(abc<=1.)):
+                c[self.qindsfortern_skipind[si]]=abc
+                return c
+        return None
+        
