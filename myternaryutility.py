@@ -1,11 +1,11 @@
-import pylab 
+import pylab
 import matplotlib.cm as cm
 import numpy
 
 class TernaryPlot:
     def __init__(self, ax_subplottriplet, offset=.02, minlist=[0., 0., 0.], ellabels=['A', 'B', 'C'], allowoutofboundscomps=True, outline=True):
         self.offset=offset
-        
+
         self.cartendpts=numpy.float32([[0, 0], [.5, numpy.sqrt(3.)/2.], [1, 0]])
         self.ellabels=ellabels
         if not ax_subplottriplet is None:
@@ -16,7 +16,7 @@ class TernaryPlot:
                 self.ax=pylab.subplot(a, b, c)
             else:
                 self.ax=ax_subplottriplet
-                
+
             self.allowoutofboundscomps=allowoutofboundscomps
             minlist=numpy.float32(minlist)
             self.rangelist=numpy.float32([[m, 1.-numpy.concatenate([minlist[:i], minlist[i+1:]]).sum()] for i, m in enumerate(minlist)])
@@ -28,11 +28,11 @@ class TernaryPlot:
             self.ax.figure.hold('True')
             self.ax.set_xlim(-.10, 1.10)
             self.ax.set_ylim(-.10, 1.10)
-            
+
             if outline:
                 self.outline()
             self.mappable=None
-    
+
     def processterncoord(self, terncoordlist, removepoints=True):
         terncoordlist=numpy.float32(terncoordlist)
         if len(terncoordlist.shape)==1:
@@ -40,8 +40,8 @@ class TernaryPlot:
         if removepoints and not self.allowoutofboundscomps:
             terncoordlist=numpy.float32([t for t in terncoordlist if (not removepoints) or numpy.all(t>=self.rangelist[:, 0]) and numpy.all(t<=self.rangelist[:, 1])])
         return terncoordlist
-        
-            
+
+
     def afftrans(self, terncoordlist):
         terncoordlist=self.processterncoord(terncoordlist)
         diff=self.rangelist[:, 1]-self.rangelist[:, 0]
@@ -53,7 +53,7 @@ class TernaryPlot:
         diff=self.rangelist[:, 1]-self.rangelist[:, 0]
         mn=self.rangelist[:, 0]
         return numpy.float32([c*diff+mn for c in terncoordlist])
-        
+
     def toCart(self, terncoordlist):
         'Given an array of triples of coords in 0-100, returns arrays of Cartesian x- and y- coords'
         terncoordlist=self.processterncoord(terncoordlist)
@@ -81,10 +81,10 @@ class TernaryPlot:
             terncoordlist=self.processterncoord(terncoordlist)
 #        print 'ptcl', terncoordlist
         return terncoordlist
-        
+
     def scatter(self, terncoordlist, **kwargs):
         'Scatterplots data given in triples, with the matplotlib keyword arguments'
-        
+
         (xs, ys) = self.toCart(terncoordlist)
         self.mappable=self.ax.scatter(xs, ys, **kwargs)
 
@@ -96,7 +96,7 @@ class TernaryPlot:
         if rangelist is None:
             rangelist=self.rangelist
         return numpy.array([[(c-minc)/(maxc-minc) for c, (minc, maxc) in zip(tc, rangelist)] for tc in terncoordlist])
-        
+
     def colorcompplot(self, terncoordlist, descriptor, colors=None, hollow=False, **kwargs):
         (xs, ys) = self.toCart(terncoordlist)
         if colors is None:
@@ -112,7 +112,7 @@ class TernaryPlot:
         if self.mappable is None:
             print 'no mappable to create colorbar'
             return
-        else:            
+        else:
             self.ax.figure.subplots_adjust(right=axrect[0]-.01)
             self.cbax=self.ax.figure.add_axes(axrect)
             f=self.ax.figure.colorbar
@@ -125,13 +125,13 @@ class TernaryPlot:
             except:
                 cb.set_label(label)
             return cb
-    
+
     def compdist(self, c1, c2):
         return ((c1-c2)**2).sum()/2.**.5
-    
+
     def compdist_cart(self, c1, c2):
         return self.compdist(self.toCart([c1])[0], self.toCart([c2])[0])
-            
+
     def line(self, begin, end, fmt='k-',  **kwargs):
         (xs, ys) = self.toCart([begin, end])
         self.ax.plot(xs, ys, fmt, **kwargs)
@@ -161,7 +161,7 @@ class TernaryPlot:
                 #cs=(r'%s$_{'+f+r'}$%s$_{'+f+r'}$%s$_{'+f+r'}$') %tuple([t[ind] for t in zip(self.ellabels, c) for ind in range(2)])
             if not cs is None:
                 self.ax.text(x+xd, y+yd, cs, ha=ha, va=va, **kwargs)
-        
+
     def grid(self, nintervals=4, fmtstr='%0.2f', takeabs=True, ternarylabels=False, printticklabels=True, **kwargs):#takeabs is to avoid a negative sign for ~0 negative compositions
         lstyle = {'color': '0.6',
          #'dashes': (1, 1),
@@ -190,7 +190,7 @@ class TernaryPlot:
                     continue
                 c=self.toComp([x, y], process=False)[0]
                 if takeabs:
-                    c=numpy.abs(c)                    
+                    c=numpy.abs(c)
                 cs=None
                 ternarylabels=ternarylabels or numpy.all(c>1.e-6)
                 #ternarylabels=ternarylabels or numpy.all(c!=0)
@@ -202,8 +202,8 @@ class TernaryPlot:
                     cs=(r'%s$_{'+f+r'}$%s$_{'+f+r'}$%s$_{'+f+r'}$') %tuple([t[ind] for t in zip(self.ellabels, c) for ind in range(2)])
                 if not cs is None:
                     self.ax.text(x+xd, y+yd, cs, ha=ha, va=va, **kwargs)
-    
-    def patch(self,coords, limits=[], **kwargs): 
+
+    def patch(self,coords, limits=[], **kwargs):
         '''Fill the area bounded by limits.
               Limits format: [[bmin,bmax],[lmin,lmax],[rmin,rmax]]
               Other arguments as for pylab.fill()'''
@@ -212,25 +212,25 @@ class TernaryPlot:
 #                  [0,1,-1],[-1,1,1],[0,-1,1],[0,0,-1],[-1,0,1]]
 #        for pt in bounds:     #plug in values for these limits
 #            for i in [0,1,2]:
-#                if pt[i] == 1: 
+#                if pt[i] == 1:
 #                    pt[i] = limits[i][1]
 #                else:
 #                    if pt[i] == 0:pt[i] = limits[i][0]
 #            for i in [0,1,2]:
-#                if pt[i] == -1: pt[i] = 99 - sum(pt) 
-#            if self.satisfies_bounds(pt, limits): coords.append(pt) 
+#                if pt[i] == -1: pt[i] = 99 - sum(pt)
+#            if self.satisfies_bounds(pt, limits): coords.append(pt)
 #        coords.append(coords[0]) #close the loop
         xs, ys = self.toCart(coords)
-        self.ax.fill(xs, ys, **kwargs) 
+        self.ax.fill(xs, ys, **kwargs)
 
 
     def text(self, loctriple, word, **kwargs):
-        
+
         (x, y) = self.toCart([loctriple])
         self.ax.text(x[0], y[0], word, **kwargs)
 
     def show(self):
-        
+
         self.ax.legend(loc=1)
         self.ax.set_xlim(-.10, 1.10)
         self.ax.set_ylim(-.10, 1.00)
@@ -241,9 +241,74 @@ class TernaryPlot:
         else:
             aff_tcl=terncoordlist
         return aff_tcl
-        
+
     def plotpoints_rgb(self, terncoordlist, affine=True, **kwargs):
         cols=self.rgb_comp(terncoordlist, affine)
         for comp, c in zip(terncoordlist, cols):
             self.scatter([comp], color=c, **kwargs)
         return cols
+
+    def complex_to_rgb(angle, amp, invert=False):
+        phase = angle
+        amplitude = amp
+        A = np.zeros((len(angle), 3))
+        A[:,0] = .5*(np.sin(phase)+1)*amplitude
+        A[:,1] = .5*(np.sin(phase+np.pi/2)+1)*amplitude
+        A[:,2] = .5*(-np.sin(phase)+1)*amplitude
+        if(invert):
+            return 1-A
+        else:
+            return A
+
+    def complex_to_rgb_grid(complex_data, invert=False):
+        from numpy import angle, max, pi, sin, zeros
+        phase = angle(complex_data)
+        amplitude = abs(complex_data)
+        amplitude = amplitude/max(max(amplitude))
+        A = zeros((complex_data.shape[0], complex_data.shape[1], 3))
+        A[:,:,0] = .5*(sin(phase)+1)*amplitude
+        A[:,:,1] = .5*(sin(phase+pi/2)+1)*amplitude
+        A[:,:,2] = .5*(-sin(phase)+1)*amplitude
+        if(invert):
+            return 1-A
+        else:
+            return A
+
+    def hsdiffplot(self, terncoordlist, terndifflist, descriptor='o', **kwargs):
+        (xs, ys) = self.toCart(terncoordlist)
+        (xd, yd) = self.toCart(terndifflist)
+        xf = xs + xd
+        yf = ys + yd
+        fomlocs=numpy.vstack((xf, yf)).T
+        maplocs=numpy.vstack((xs, ys)).T
+        fomlocs[:,0]=fomlocs[:,0]-0.5
+        fomlocs[:,1]=fomlocs[:,1]-(numpy.sin(-numpy.pi/3)/2)
+        maplocs[:,0]=maplocs[:,0]-0.5
+        maplocs[:,1]=maplocs[:,1]-(numpy.sin(-numpy.pi/3)/2)
+        dist = fomlocs - maplocs
+        sat = numpy.linalg.norm(dist, axis=1)/numpy.sqrt(2)
+        ang = numpy.arctan2(dist[:,1],dist[:,0]) + numpy.pi/2
+        sat_norm=sat/max(sat)
+        rgb_arr=self.complex_to_rgb(ang, sat_norm, invert=True)
+        self.colorcompplot(terncoordlist, descriptor='o', colors=rgb_arr, hollow=False, markeredgecolor='none')
+
+        # color wheel axes
+        self.cwax=self.ax.figure.add_axes([0.8, 0.6, 0.2, 0.2], projection='polar')
+        N = 1024
+        x = numpy.linspace(-1, 1, N)
+        y = numpy.linspace(-1, 1, N)
+        X,Y = numpy.meshgrid(x,y)
+        R = numpy.sqrt(X*X + Y*Y)
+        PHI = numpy.arctan2(Y, X) - numpy.pi/2
+        colorgrid=self.complex_to_rgb_grid(R*numpy.exp(-1j*PHI)  * (R<1), invert=True)
+        self.cwax.imshow(colorgrid, extent=[0,2*numpy.pi, 0,1024])
+        self.cwax.set_rgrids([1,N/3,2*N/3], angle=45)
+        self.cwax.set_xticks([numpy.pi/2, 7*numpy.pi/6, 11*numpy.pi/6])
+        self.cwax.set_yticks([0, N/3, 2*N/3, N])
+        self.cwax.set_xticklabels(['%s' % ('G'),
+                                    '%s' % ('R'),
+                                    '%s' % ('B')])
+        self.cwax.set_yticklabels(['0',
+                                    '%.3f' % (max(sat)/3),
+                                    '%.3f' % (2*max(sat)/3),
+                                    '%.3f' % (max(sat))])
