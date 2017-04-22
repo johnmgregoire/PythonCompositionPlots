@@ -21,19 +21,18 @@ class TernaryPlot:
             self.allowoutofboundscomps=allowoutofboundscomps
             minlist=numpy.float32(minlist)
             self.rangelist=numpy.float32([[m, 1.-numpy.concatenate([minlist[:i], minlist[i+1:]]).sum()] for i, m in enumerate(minlist)])
-    #        if not ellabels is None:
-    #            for el, r in zip(ellabels, self.rangelist):
-    #                print 'range of %s is %.2f to %.2f' %((el,)+tuple(r))
-            self.ax.set_axis_off()
-            self.ax.set_aspect('equal')
-            self.ax.figure.hold('True')
-            self.ax.set_xlim(-.10, 1.10)
-            self.ax.set_ylim(-.10, 1.10)
-
-            if outline:
-                self.outline()
+            
+            self.prepax(outline=outline)
             self.mappable=None
-
+    
+    def prepax(self, outline=True):
+        self.ax.set_axis_off()
+        self.ax.set_aspect('equal')
+        self.ax.figure.hold('True')
+        self.ax.set_xlim(-.10, 1.10)
+        self.ax.set_ylim(-.10, 1.10)
+        if outline:
+            self.outline()
     def processterncoord(self, terncoordlist, removepoints=True):
         terncoordlist=numpy.float32(terncoordlist)
         if len(terncoordlist.shape)==1:
