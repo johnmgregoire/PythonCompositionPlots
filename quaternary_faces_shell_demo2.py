@@ -20,7 +20,7 @@ comps=numpy.float32(compsint)/intervs
 pylab.figure()
 stpquat=QuaternaryPlot(111)
 cols=stpquat.rgb_comp(comps)
-stpquat.scatter(comps, c=cols, s=100, edgecolors='none')
+stpquat.scatter(comps, c=cols, s=1200, edgecolors='none')
 stpquat.label()
 
 

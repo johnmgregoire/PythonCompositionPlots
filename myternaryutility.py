@@ -1,6 +1,7 @@
 import pylab
 import matplotlib.cm as cm
 import numpy
+from colorsys import hsv_to_rgb, rgb_to_hsv
 
 class TernaryPlot:
     def __init__(self, ax_subplottriplet, offset=.02, minlist=[0., 0., 0.], ellabels=['A', 'B', 'C'], allowoutofboundscomps=True, outline=True):
@@ -248,19 +249,7 @@ class TernaryPlot:
             self.scatter([comp], color=c, **kwargs)
         return cols
 
-    def complex_to_rgb(angle, amp, invert=False):
-        phase = angle
-        amplitude = amp
-        A = np.zeros((len(angle), 3))
-        A[:,0] = .5*(np.sin(phase)+1)*amplitude
-        A[:,1] = .5*(np.sin(phase+np.pi/2)+1)*amplitude
-        A[:,2] = .5*(-np.sin(phase)+1)*amplitude
-        if(invert):
-            return 1-A
-        else:
-            return A
-
-    def complex_to_rgb_grid(complex_data, invert=False):
+    def complex_to_rgb_grid(self, complex_data, invert=False):
         from numpy import angle, max, pi, sin, zeros
         phase = angle(complex_data)
         amplitude = abs(complex_data)
@@ -274,26 +263,29 @@ class TernaryPlot:
         else:
             return A
 
-    def hsdiffplot(self, terncoordlist, terndifflist, descriptor='o', **kwargs):
-        (xs, ys) = self.toCart(terncoordlist)
-        (xd, yd) = self.toCart(terndifflist)
-        xf = xs + xd
-        yf = ys + yd
-        fomlocs=numpy.vstack((xf, yf)).T
-        maplocs=numpy.vstack((xs, ys)).T
-        fomlocs[:,0]=fomlocs[:,0]-0.5
-        fomlocs[:,1]=fomlocs[:,1]-(numpy.sin(-numpy.pi/3)/2)
-        maplocs[:,0]=maplocs[:,0]-0.5
-        maplocs[:,1]=maplocs[:,1]-(numpy.sin(-numpy.pi/3)/2)
-        dist = fomlocs - maplocs
-        sat = numpy.linalg.norm(dist, axis=1)/numpy.sqrt(2)
-        ang = numpy.arctan2(dist[:,1],dist[:,0]) + numpy.pi/2
-        sat_norm=sat/max(sat)
-        rgb_arr=self.complex_to_rgb(ang, sat_norm, invert=True)
-        self.colorcompplot(terncoordlist, descriptor='o', colors=rgb_arr, hollow=False, markeredgecolor='none')
+    def rgb_compdiff(self, compdiffarr, maxcompdist=None):
+        sat = ((compdiffarr**2).sum(axis=1)/2.)**.5
+        huelist=[0. if cd.sum()==0. else rgb_to_hsv(*(cd/cd.sum()))[0] for cd in numpy.abs(compdiffarr)]
+        if maxcompdist is None:
+            sat_norm=sat/max(sat)
+        else:
+            sat_norm=sat/maxcompdist
+            sat_norm[sat_norm>1.]=1.
+        rgbarr=numpy.array([hsv_to_rgb(h, s, 1) for h, s in zip(huelist, sat_norm)])
+        return rgbarr
+        
+    def hsdiffplot(self, terncomps, terncomps2, descriptor='o', **kwargs):
+        comps=numpy.float64(terncomps)
+        comps2=numpy.float64(terncomps2)
+        compsdiff=comps2-comps
+        rgb_arr=self.rgb_compdiff(compsdiff)
+        compdist = ((compsdiff**2).sum(axis=1)/2.)**.5
+        
+        self.colorcompplot(comps, descriptor=descriptor, colors=rgb_arr, hollow=False, markeredgecolor='none', **kwargs)
 
         # color wheel axes
-        self.cwax=self.ax.figure.add_axes([0.8, 0.6, 0.2, 0.2], projection='polar')
+        self.ax.figure.subplots_adjust(left=.05, right=.7)
+        self.cwax=self.ax.figure.add_axes([0.6, 0.45, 0.3, 0.45], projection='polar')
         N = 1024
         x = numpy.linspace(-1, 1, N)
         y = numpy.linspace(-1, 1, N)
@@ -304,11 +296,11 @@ class TernaryPlot:
         self.cwax.imshow(colorgrid, extent=[0,2*numpy.pi, 0,1024])
         self.cwax.set_rgrids([1,N/3,2*N/3], angle=45)
         self.cwax.set_xticks([numpy.pi/2, 7*numpy.pi/6, 11*numpy.pi/6])
-        self.cwax.set_yticks([0, N/3, 2*N/3, N])
-        self.cwax.set_xticklabels(['%s' % ('G'),
-                                    '%s' % ('R'),
+        self.cwax.set_yticks([N/3, 2*N/3, N])
+        self.cwax.set_xticklabels(['%s' % ('G'),\
+                                    '%s' % ('R'),\
                                     '%s' % ('B')])
-        self.cwax.set_yticklabels(['0',
-                                    '%.3f' % (max(sat)/3),
-                                    '%.3f' % (2*max(sat)/3),
-                                    '%.3f' % (max(sat))])
+        self.cwax.set_yticklabels([\
+                                    '%.3f' % (max(compdist)/3.),\
+                                    '%.3f' % (2.*max(compdist)/3.),\
+                                    '%.3f' % (max(compdist))])
