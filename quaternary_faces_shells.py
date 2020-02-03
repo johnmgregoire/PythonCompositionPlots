@@ -133,7 +133,26 @@ class ternaryfaces_shells:
                         self.ax.scatter(self.shift_nshell[-1], 0, c=cv, s=s, **kwargs)
                 else:
                     [patchfcn(self.shift_nshell[-1], 0, cv) for cv in shellc]
-                    
+    
+    def get_plot_coords(self, quatcomps, skipinds=range(4)):
+        quatcomps=numpy.int32(numpy.round(quatcomps*self.nint))
+        nshell_inds_x_y=[]
+        for nshell in range(int(self.nint//4)+int(self.nint%4>0)):
+            ba=((quatcomps==nshell).sum(axis=1, dtype='int32')>0)&((quatcomps>=nshell).prod(axis=1, dtype='int32')>0)
+            self.shellcomps=quatcomps[ba]
+            self.shellcomps=(self.shellcomps-nshell)/(self.nint-4.*nshell)
+            inds_x_y=self.toCart(self.shellcomps, skipinds=skipinds, nshell=nshell)
+            for inds, x, y in inds_x_y:
+                nshell_inds_x_y+=[(nshell, numpy.where(ba)[0][inds], x, y)]
+        if self.nint%4==0: #single point with no frame
+            ba=(quatcomps==self.nint//4).prod(axis=1, dtype='int32')>0
+            if True in ba:
+                self.shellcomps=quatcomps[ba]#only 1 comp but might be duplicated
+                nshell_inds_x_y+=[(nshell+1, numpy.where(ba)[0], self.shift_nshell[-1], 0)]#not sure if this is correct way to handle the single point plot where nshell is taken to be 1 higher than that from above loop
+                
+        return nshell_inds_x_y
+        
+        
     def quatscatter(self, quatcomps, c, skipinds=range(4), azim=-60, elev=30, alphaall=.2, alphashell=1., fontsize=14, outline=True,  **kwargs):
         numsubs=int(self.nint//4)+1
         quatcomps=numpy.int32(numpy.round(quatcomps*self.nint))
