@@ -5,6 +5,7 @@ import matplotlib as mpl
 from matplotlib.patches import CirclePolygon
 from matplotlib.collections import PatchCollection
 from itertools import combinations as comb
+from collections import defaultdict
 from glob import glob
 
 ANALYSIS_DIR = 'L:/processes/analysis/eche'
@@ -15,19 +16,34 @@ pre_ints = [2, 4]
 post_anas = ['20191126.171630', '20191126.173907', '20191126.180144', '20191126.182425', '20191126.184655', '20191203.090307', '20191203.090925']
 post_ints = [2, 4, 6]
 ana_fomnames = ['Jmin.mAcm2']
+skip_sample_nos = []
+# skip_sample_nos = [1, 65, 129, 193, 257, 321, 385, 449, 513, 577, 641, 705, 769, 833, 897, 961, 1025, 1089, 1153, 1217, 1281, 1345, 1409, 1473, 1537, 1601, 1665, 1729, 1793, 1857, 1921, 1985, 2049, 2113, 2114, 2115, 2116, 2117, 2118, 2119, 2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2128, 2129, 2130, 2131, 2132, 2133, 2134]
+# singles = [1, 65, 129, 193, 257, 321, 385, 449, 513, 577, 641, 705, 769, 833, 897, 961, 1025, 1089, 1153, 1217, 1281, 1345, 1409, 1473, 1537, 1601, 1665, 1729, 1793, 1857, 1921, 1985, 2049]
+# doubles = [2113, 2114, 2115, 2116, 2117, 2118, 2119, 2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2128, 2129, 2130, 2131, 2132, 2133, 2134]
 
 # for pid, ana_timestamp in zip(plate_ids, pre_anas):
-    # for ana_int in pre_ints:
+#     for ana_int in pre_ints:
 for pid, ana_timestamp in zip(plate_ids, post_anas):
     for ana_int in post_ints:
         ana_csvpath = glob("%s/%s*/ana__%i*.csv" %(ANALYSIS_DIR, ana_timestamp, ana_int))[0]
         df = pd.read_csv(ana_csvpath, skiprows=8)
-        fomdict = {x: df[x].values for x in ana_fomnames}
-
         compinds = [i for i,x in enumerate(df.columns) if ".PM.AtFrac" in x]
         colnames = [df.columns[i] for i in compinds]
         ana_elements = [x.replace(".PM.AtFrac", "") for x in colnames]
-        ana_compsint = (df[colnames].round(1)*10).astype('int').values.tolist()
+        df[colnames] = df[colnames].apply(lambda x: pd.Series.round(x, 1) * 10)
+        ana_compsint = df[colnames].astype('int').values.tolist()
+        aggdf = df.groupby(colnames).agg({k: 'mean' for k in ana_fomnames}).reset_index()
+        aggfomdict = {x: aggdf[x].values for x in ana_fomnames}
+        agg_compsint = aggdf[colnames].astype('int').values.tolist()
+        
+        dupedict = {}
+        for k in ana_fomnames:
+            dupedict[k] = defaultdict(list)
+            for fomv, compv in zip(df[k].values, ana_compsint):
+                dupedict[k][tuple(compv)].append(fomv)
+
+        for fomk in ana_fomnames:
+            dupedict[fomk] = {k: v for k,v in dupedict[fomk].items() if len(v)>1}
 
 
         intervs=10
@@ -115,8 +131,8 @@ for pid, ana_timestamp in zip(plate_ids, post_anas):
 
         #larger fontsize
         xystarts_comporder=[[]]#empty list of el order 0
-        xystarts_comporder+=[[[.5,b] for b in 4.5-.25*np.arange(6) ]]
-        xystarts_comporder+=[[[1.2,b] for b in 4.5-.25*np.arange(15) ]]
+        xystarts_comporder+=[[[.5,b] for b in 4.5-0.9*np.arange(6) ]]
+        xystarts_comporder+=[[[1.2,b] for b in 4.5-0.4*np.arange(15) ]]
         xystarts_comporder+=[[[a,b] for a in 2.5+np.arange(4)*1.1 for b in 4.3-.95*np.arange(5)]]
         xystarts_comporder+=[[[a,b] for a in 5.+np.arange(3)*2.4 for b in 4.3-.95*np.arange(5)]]
 
@@ -153,7 +169,7 @@ for pid, ana_timestamp in zip(plate_ids, post_anas):
         #    ax.set_ylim(min(allxy[:,1])-0.1,max(allxy[:,1])+0.1)
         def f_setlim(ax,f=False):
             ax.set_xlim(0,13.9)
-            ax.set_ylim(0,4.9)
+            ax.set_ylim(-1.5,4.9)
             if not f:
                 #ax.set_frame_on(False)
                 ax.set_xticks([])
@@ -162,26 +178,38 @@ for pid, ana_timestamp in zip(plate_ids, post_anas):
         compsint
         # for fomind in range(6):
         for fomname in ana_fomnames:
-            plt.figure(figsize=(13,5))
+            plt.figure(figsize=(13,6.5))
             ax=plt.gca()
             ax.set_aspect(1)
             # fom=np.float64([c[fomind] for c in compsint])/intervs
-            fom = fomdict[fomname]
+            fom = aggfomdict[fomname]
             patches = []
-            for c,z in zip(ana_compsint,fom):
+            dupepatches = []
+            dupefoms = []
+            for c,z in zip(agg_compsint,fom):
                 x,y=allcomp_xy[tuple(c)]
                 patches.append(make_patch_xy(x, y))
+                if tuple(c) in dupedict[fomname].keys():
+                    for i,v in enumerate(dupedict[fomname][tuple(c)]):
+                        dupepatches.append(make_patch_xy(x, y-0.1*(i+1)))
+                        dupefoms.append(v)
                 # patch_xyc(ax,x,y,[z,0.1,0.1])
+            dupefoms = np.array(dupefoms)
             p = PatchCollection(patches, cmap=mpl.cm.viridis_r)
+            dp = PatchCollection(dupepatches, cmap=mpl.cm.viridis_r)
             p.set_array(fom)
+            dp.set_array(dupefoms)
+            allfoms = np.concatenate((fom, dupefoms))
             # clim = p.get_clim()
             if 'Jmin' in fomname:
-                p.set_clim([np.percentile(fom, 2), np.percentile(fom, 98)])
+                p.set_clim([np.percentile(allfoms, 2), np.percentile(allfoms, 98)])
+                dp.set_clim([np.percentile(allfoms, 2), np.percentile(allfoms, 98)])
             ax.add_collection(p)
+            ax.add_collection(dp)
             f_setlim(ax)
             addlabels(ax)
-            # plt.savefig('%s-prePETS-ana__%s-%s_heatmap.eps' %(pid, ana_int, fomname))
-            # plt.savefig('%s-prePETS-ana__%s-%s_heatmap.png' %(pid, ana_int, fomname))
+#             plt.savefig('%s-prePETS-ana__%s-%s_heatmap.eps' %(pid, ana_int, fomname))
+#             plt.savefig('%s-prePETS-ana__%s-%s_heatmap.png' %(pid, ana_int, fomname))
             plt.savefig('%s-postPETS-ana__%s-%s_heatmap.eps' %(pid, ana_int, fomname))
             plt.savefig('%s-postPETS-ana__%s-%s_heatmap.png' %(pid, ana_int, fomname))
 
